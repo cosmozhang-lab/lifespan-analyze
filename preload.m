@@ -1,4 +1,4 @@
-load ../matlab1.mat;
+load G7.mat;
 
 finterval = 4;
 tolerance_diedrate = 0.9;

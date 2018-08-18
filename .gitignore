@@ -1,0 +1,13 @@
+# Matlab junks
+._*.m
+*.asv
+
+# Matlab data
+*.mat
+
+# Figures & images
+*.fig
+*.jpg
+*.png
+*.tiff
+
