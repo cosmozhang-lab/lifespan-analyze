@@ -1,3 +1,5 @@
+load_params;
+
 plate = 'G7';
 nfiles = 105;
 minsize = 700;
@@ -10,9 +12,13 @@ tolerance_havingdiedrate = 0.5;
 files = get_file_list(plate);
 files = files(end-nfiles+1:end);
 mmts(:, :, 1) = imread(fullfile(thedir, files(1).name));
+fprintf('loaded %d / %d\n', 1, nfiles);
 for i = 2:nfiles
     im2shift = match_plate(files(1).name,files(i).name,thedir);
     mmts(:, :, i) = im2shift;
     bw = detect_worm_2d(im2shift,minsize,maxsize);
     mmts_bw(:, :, i) = bw;
+  fprintf('loaded %d / %d\n', i, nfiles);
 end
+
+save([plate '.mat'], 'mmts', 'mmts_bw');

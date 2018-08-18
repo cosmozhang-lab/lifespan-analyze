@@ -25,11 +25,12 @@ for i = 1:length(subdirs)
         end
     end
 end
-files = cell(1,cnt);
+files = struct;
 ii = 1;
 for i = 1:length(tmp)
     if ~isempty(tmp{i})
-        files{ii} = tmp{i};
+        files(ii).fullpath = tmp{i}.fullpath;
+        files(ii).subdir = tmp{i}.subdir;
         ii = ii + 1;
     end
 end
