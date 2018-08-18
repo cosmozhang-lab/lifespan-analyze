@@ -9,16 +9,19 @@ tolerance_diedrate = 0.9;
 tolerance_havingdiedrate = 0.5;
 
 % single frame - registration and segmentation of C. elegans
+mmts = zeros([imagesize, nfiles], 'uint8');
+mmts_bw = zeros([imagesize, nfiles], 'uint8');
 files = get_file_list(plate);
 files = files(end-nfiles+1:end);
-mmts(:, :, 1) = imread(fullfile(thedir, files(1).name));
+mmts(:, :, 1) = imread(files(1).fullpath);
 fprintf('loaded %d / %d\n', 1, nfiles);
 for i = 2:nfiles
-    im2shift = match_plate(files(1).name,files(i).name,thedir);
+    imi = imread(files(i).fullpath);
+    im2shift = match_plate(mmts(:,:,i-1), imi);
     mmts(:, :, i) = im2shift;
     bw = detect_worm_2d(im2shift,minsize,maxsize);
     mmts_bw(:, :, i) = bw;
-  fprintf('loaded %d / %d\n', i, nfiles);
+    fprintf('loaded %d / %d\n', i, nfiles);
 end
 
 save([plate '.mat'], 'mmts', 'mmts_bw');
