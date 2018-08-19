@@ -18,7 +18,6 @@ function [out] = death_count(bwdeaths1_ori,bwdeaths2_ori,tolerance_havingdiedrat
 
 L = bwlabel(bwdeaths2_ori);
 nworms = max(max(L));
-areas = 
 bbwdeaths2_ori = cast(bwdeaths2_ori, 'logical');
 stats = regionprops(bbwdeaths2_ori,{...
     'Area',...
