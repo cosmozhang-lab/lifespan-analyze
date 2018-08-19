@@ -25,6 +25,7 @@ imdeaths_overlap = cast(bwdeaths1_ori, 'uint8') + cast(bwdeaths2_ori, 'uint8');
 bwdeaths2 = gpuArray(zeros(size(imdeaths_overlap), 'uint8'));
 num_deaths2 = 0;
 bwregion = gpuArray(zeros(size(L), 'uint8'));
+centroids = [];
 for j = 1:length(stats)
     bwregion(:,:) = 0;
     bbwregion = (L == j);
@@ -34,9 +35,10 @@ for j = 1:length(stats)
     if area_ratio < tolerance_havingdiedrate
         bwdeaths2(bbwregion) = 1;
         num_deaths2 = num_deaths2 + 1;
+        centroids = [centroids;stats(j).Centroid];
     end
 end
 
 out.num_deaths = num_deaths2;
 out.bw_deaths = bwdeaths2;
-out.centroids = stats.Centroid;
+out.centroids = centroids;
