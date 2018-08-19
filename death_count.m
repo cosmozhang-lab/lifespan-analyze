@@ -27,9 +27,10 @@ end
 imdeaths_overlap = bwdeaths1_ori + bwdeaths2_ori;
 bwdeaths2 = gpuArray(zeros(size(imdeaths_overlap), 'uint8'));
 num_deaths2 = 0;
-bwregion = gpuArray(uint8(zeros(size(L))));
+bwregion = gpuArray(zeros(size(L), 'uint8'));
 for j = 1:length(stats)
-    bbwregion = cast(L == j, 'uint8');
+    bwregion(:,:) = 0;
+    bbwregion = (L == j);
     bwregion(bbwregion) = 1;
     bwregion = bwregion .* imdeaths_overlap;
     area_ratio = sum(sum(bwregion == 2)) / stats(j).Area;
