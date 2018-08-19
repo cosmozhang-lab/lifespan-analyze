@@ -70,7 +70,7 @@ classdef ImageManager < handle
                 end
             end
             obj.curridx = image_idx;
-            fprintf('Manager loaded %d images\n', counter);
+            % fprintf('Manager loaded %d images\n', counter);
         end
         
         function [] = next(obj)

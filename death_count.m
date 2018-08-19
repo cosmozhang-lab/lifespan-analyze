@@ -39,3 +39,4 @@ end
 
 out.num_deaths = num_deaths2;
 out.bw_deaths = bwdeaths2;
+out.centroids = stats.Centroid;

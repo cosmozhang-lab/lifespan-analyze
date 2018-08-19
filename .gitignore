@@ -11,3 +11,5 @@
 *.png
 *.tiff
 
+# Custom
+load_params.m
