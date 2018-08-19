@@ -18,11 +18,10 @@ function [out] = death_count(bwdeaths1_ori,bwdeaths2_ori,tolerance_havingdiedrat
 
 L = bwlabel(bwdeaths2_ori);
 nworms = max(max(L));
-bbwdeaths2_ori = cast(bwdeaths2_ori, 'logical');
-stats = regionprops(bbwdeaths2_ori,{...
+stats = regionprops(bwdeaths2_ori,{...
     'Area',...
     'Centroid'});
-imdeaths_overlap = cast(bwdeaths1_ori + bwdeaths2_ori, 'uint8');
+imdeaths_overlap = cast(bwdeaths1_ori, 'uint8') + cast(bwdeaths2_ori, 'uint8');
 bwdeaths2 = gpuArray(zeros(size(imdeaths_overlap), 'uint8'));
 num_deaths2 = 0;
 bwregion = gpuArray(zeros(size(L), 'uint8'));
