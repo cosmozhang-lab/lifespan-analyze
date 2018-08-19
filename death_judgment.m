@@ -23,7 +23,7 @@ end
 
 tic;
 
-bw = gpuArray(uint8(zeros(bw_manager.size())));
+bw = gpuArray(zeros(bw_manager.size(), 'uint8'));
 for i = fcurent-finterval+1:fcurent
     bw = cast(bw_manager.gpu_image(i), 'uint8') + bw;
 end
@@ -35,7 +35,7 @@ imoverlap = bwcurrent + bw;
 L = bwlabel(bwcurrent);
 stats = regionprops(gather(L), 'Area');
 num_deaths = 0;
-bwdeaths = gpuArray(uint8(zeros(size(imoverlap))));
+bwdeaths = gpuArray(zeros(size(imoverlap), 'uint8'));
 for j = 1:length(stats)
     bbwregion = (L == j);
     uibwregion = cast(bbwregion, 'uint8');
