@@ -22,7 +22,7 @@ bbwdeaths2_ori = cast(bwdeaths2_ori, 'logical');
 stats = regionprops(bbwdeaths2_ori,{...
     'Area',...
     'Centroid'});
-imdeaths_overlap = bwdeaths1_ori + bwdeaths2_ori;
+imdeaths_overlap = cast(bwdeaths1_ori + bwdeaths2_ori, 'uint8');
 bwdeaths2 = gpuArray(zeros(size(imdeaths_overlap), 'uint8'));
 num_deaths2 = 0;
 bwregion = gpuArray(zeros(size(L), 'uint8'));
