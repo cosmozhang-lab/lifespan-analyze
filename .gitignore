@@ -13,3 +13,4 @@
 
 # Custom
 load_params.m
+*.local.*

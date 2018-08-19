@@ -1,4 +1,5 @@
-load G7.mat;
+plate = 'G7';
+load(sprintf('./data/%s.mat', plate));
 
 finterval = 4;
 tolerance_diedrate = 0.9;
