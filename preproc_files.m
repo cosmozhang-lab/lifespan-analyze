@@ -24,4 +24,4 @@ for i = 2:nfiles
     fprintf('loaded %d / %d\n', i, nfiles);
 end
 
-save([plate '.mat'], 'mmts', 'mmts_bw');
+save([plate '.mat'], '-v7.3', 'mmts', 'mmts_bw', 'plate', 'nfiles');

@@ -1,4 +1,4 @@
-manager.load(1);
+%manager.load(1);
 manager_bw.load(1);
 
 % Multiple frames- death judgment of C. elegans

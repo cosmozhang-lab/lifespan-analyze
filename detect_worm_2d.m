@@ -18,12 +18,14 @@ BW=im2bw(I,level);
 se = strel('disk',3);
 BW = imopen(BW,se);
 % area selection
-[L,num] = bwlabeln(~BW);
+BW = gpuArray(BW);
+[L,num] = bwlabel(~BW);
 stats = regionprops(L);     % Area filter
 BW = ismember(L, find([stats.Area] < maxsize));
 BW = bwareaopen(BW,minsize);
 % imfill
 BW = imfill(BW,'holes');
+BW = gather(BW);
 
 end
 
