@@ -1,6 +1,6 @@
 function [ files ] = get_file_list( plate_name )
 
-load_params;
+main_params;
 
 plate_filename = [plate_name, imgsuffix];
 subdirs = dir(rootdir);

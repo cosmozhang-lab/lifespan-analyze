@@ -56,7 +56,7 @@ function maintest_view_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 load_params;
-load('./out/result.mat');
+load('./out/result-H12.mat');
 handles.nfiles = nfiles;
 filelist_saving_name = './out/filelist.mat';
 if exist(filelist_saving_name, 'file')

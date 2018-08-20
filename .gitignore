@@ -15,3 +15,4 @@
 load_params.m
 *.local.*
 /out
+/figures

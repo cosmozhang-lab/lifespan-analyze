@@ -168,7 +168,7 @@ function load_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-load_params;
+main_params;
 
 plate = handles.plate_input.String;
 if ~isempty(plate)

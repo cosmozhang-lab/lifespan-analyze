@@ -34,17 +34,14 @@ se = strel('disk',3);
 BW = imopen(BW,se);
 % area selection
 [L,num] = bwlabel(~BW);
-stats = regionprops(L);     % Area filter
-BW = ismember(L, find([stats.Area] < maxsize));
-if usegpu
-    BW = gather(BW);
-end
-BW = bwareaopen(BW,minsize);
+stats = regionprops(L, 'Area');     % Area filter
+areas = [stats.Area];
+BW = ismember(L, find((areas < maxsize) & (areas > minsize)));
 % imfill
 BW = imfill(BW,'holes');
 
-if isgpu
-    BW = gpuArray(BW);
+if ~isgpu
+    BW = gather(BW);
 end
 
 end
