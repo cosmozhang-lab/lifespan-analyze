@@ -132,7 +132,7 @@ function goto_image(hObject, handles, idx)
 files = handles.files;
 nfiles = handles.nfiles;
 handles.current = idx;
-thefile = files{idx};
+thefile = files(idx);
 im = imread(thefile.fullpath);
 axes(handles.image_axes);
 imshow(im);

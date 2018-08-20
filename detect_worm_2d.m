@@ -1,4 +1,4 @@
-function BW = detect_worm_2d(I,minsize,maxsize)
+function BW = detect_worm_2d(I,minsize,maxsize,varargin)
 % ***************************************************************************
 % Function: Identify the location of C. elegans based on area selection.
 %   Input: 
@@ -11,21 +11,41 @@ function BW = detect_worm_2d(I,minsize,maxsize)
 % Date: 2018/8/09
 % ***************************************************************************
 
+usegpu = 1;
+
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'nogpu')
+        usegpu = 0;
+    end
+end
+
 % otsu
+isgpu = isa(I, 'gpuArray');
+if isgpu
+    I = gather(I);
+end
 level=graythresh(I);     % Threshold segmentation
-BW=im2bw(I,level);
+BW = im2bw(I,level);
+if usegpu
+    BW = gpuArray(BW);
+end
 % imopen
 se = strel('disk',3);
 BW = imopen(BW,se);
 % area selection
-BW = gpuArray(BW);
 [L,num] = bwlabel(~BW);
 stats = regionprops(L);     % Area filter
 BW = ismember(L, find([stats.Area] < maxsize));
+if usegpu
+    BW = gather(BW);
+end
 BW = bwareaopen(BW,minsize);
 % imfill
 BW = imfill(BW,'holes');
-BW = gather(BW);
+
+if isgpu
+    BW = gpuArray(BW);
+end
 
 end
 

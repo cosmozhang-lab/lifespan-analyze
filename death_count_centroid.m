@@ -27,9 +27,7 @@ bbwcurrent = bw_manager.gpu_image(fcurent);
 bwcurrent = cast(bbwcurrent, 'uint8');
 imoverlap = bwcurrent + bw;
 L = bwlabel(bwcurrent);
-stats = regionprops(gather(L), {...
-    'Area',...
-    'Centroid'});
+stats = regionprops(gather(L), 'Centroid');
 num_deaths = 0;
 bwdeaths = gpuArray(zeros(size(imoverlap), 'uint8'));
 centroids = [];

@@ -1,12 +1,12 @@
 # Matlab junks
 ._*.m
 *.asv
+*.m~
 
 # Matlab data
 *.mat
 
-# Figures & images
-*.fig
+# images
 *.jpg
 *.png
 *.tiff
@@ -14,3 +14,4 @@
 # Custom
 load_params.m
 *.local.*
+/out
