@@ -2,6 +2,12 @@ main_params;
 
 % plates = {'G10','G11','G12', 'H10','H11','H12','I10','I11','I12',};
 plates = {'G11','H10','H12','I10','I12',};
+groups = {...
+    [1,2,3],...
+    [2,3,4],...
+    [3,4,5],...
+    [1,3,5],...
+    [2,4,5]};
 figsize = [0 0 11 11];
 
 time_interval = 8;
@@ -11,33 +17,27 @@ fontsize = 18;
 fontname = 'Candara';
 linewidth = 2;
 
-thecurves = zeros(length(plates), nfiles);
+thecurves = zeros(length(groups), nfiles);
 
-main_params;
-figure(1);
+plate_deaths = zeros(length(plates),nfiles);
 for iplt = 1:length(plates)
-main_params;
 plate = plates{iplt};
 load(sprintf('out/result-%s.mat', plate));
-% num_deaths = max(num_deaths - 1, 0);
-num_deaths(53:end) = 0;
-numalive = cumsum(num_deaths);
-numalive = numalive(end) - numalive;
-isdaf2 = 0;
-lw = linewidth;
-if strcmpi(plate, 'I11')
-    lw = linewidth * 3;
-    isdaf2 = 1;
+plate_deaths(iplt,:) = num_deaths;
 end
-numalive_ratio = numalive / numalive(1);
-ha = plot(((0:nfiles-1) * time_interval + start_time)/24, numalive_ratio, 'LineWidth', linewidth);
-thecurves(iplt, :) = numalive_ratio;
-if isdaf2
-    ax_daf2 = ha;
-elseif iplt == 1
-    ax_wt = ha;
-end
-hold on;
+
+figure(1);
+for i = 1:length(groups)
+    groupiplts = groups{i};
+    groupdata = plate_deaths(groupiplts,:);
+    num_deaths = sum(groupdata,1);
+    num_deaths(53:end) = 0;
+    numalive = cumsum(num_deaths);
+    numalive = numalive(end) - numalive;
+    numalive_ratio = numalive / numalive(1);
+    plot(((0:nfiles-1) * time_interval + start_time)/24, numalive_ratio, 'LineWidth', linewidth);
+    thecurves(i, :) = numalive_ratio;
+    hold on;
 end
 hold off;
 
@@ -47,9 +47,6 @@ hold on;
 plot([0,start_time]/24, [1,1], 'Color', [1 1 1] * 0.5, 'LineWidth', linewidth);
 plot([start_time,start_time]/24, [0,1], '--', 'Color', [1 1 1] * 0.5, 'LineWidth', linewidth);
 hold off;
-
-% set(gca, 'XMinorTick', 'on');
-% set(gca, 'YMinorTick', 'on');
 
 ha = gca;
 ylim([0, 1.1]);
@@ -78,4 +75,4 @@ set(gcf, 'position', [0 0 15.88 11.91] / 2.54);
 print('figures/curves.jpg', '-djpeg', '-r300');
 close(gcf);
 
-save('out/curves.mat', 'thecurves');
+% save('out/curves.mat', 'thecurves');
