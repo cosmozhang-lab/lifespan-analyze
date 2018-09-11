@@ -1,0 +1,11 @@
+rootdir = "/store/Data/lifespan-20180718"
+imgsuffix = '.tiff'
+imagesize = (6680, 6680)
+finterval = 3
+tolerance_diedrate = 0.7
+tolerance_havingdiedrate = 0.5
+minsize = 1000
+maxsize = 3500
+plate = 'G10'
+nfiles = 105
+verbose = 5

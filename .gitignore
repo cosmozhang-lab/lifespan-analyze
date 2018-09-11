@@ -12,7 +12,7 @@
 *.tiff
 
 # Custom
-load_params.m
 *.local.*
-/out
-/figures
+
+# Python junks
+*.pyc
