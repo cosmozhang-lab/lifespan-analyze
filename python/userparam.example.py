@@ -1,6 +1,6 @@
 import lifespan.mainparams as mp
 
-mp.rootdir = "/store/Data/lifespan-20180718"
+mp.rootdir = "/path/to/data/directory"
 mp.plate = 'G10'
 mp.ifile0 = 403
 mp.nfiles = 105
