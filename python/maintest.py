@@ -1,20 +1,16 @@
-import lifespan.mainparams as mp
-import lifespan.main_load_files
-import lifespan.main_preproc
-import lifespan.main_analyze
-
 # This must be imported as the last package because it will cause lifespan modules execute immediately
+import lifespan.mainparams as mp
 import userparam
+import time
 
-try:
-    reload
-except Exception as e:
-    from importlib import reload
+from lifespan.main_load_files import main_load_files
+# from lifespan.main_preproc import main_preproc
+# from lifespan.main_analyze import main_analyze
 
-def maintest():
-    reload(userparam)
-    reload(lifespan.main_load_files)
-    reload(lifespan.main_preproc)
-    reload(lifespan.main_analyze)
+ts = time.time()
 
-maintest()
+main_load_files()
+# main_preproc()
+# main_analyze()
+
+te = time.time()

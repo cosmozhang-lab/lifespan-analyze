@@ -1,5 +1,6 @@
 from datetime import datetime
 
+datetime_regfmt = r"\d+\-\d+\-\d+__\d+\-\d+\-\d+"
 datetime_format = "%Y-%m-%d__%H-%M-%S"
 
 def parse_datetime(init):
