@@ -18,6 +18,8 @@ def torch_imopen(bw, stel):
     bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) > 0)
     return bw
 
+def torch_bwlabel(bw):
+    pass
 
 def detect_worm_2d(image):
     thv, bw = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
