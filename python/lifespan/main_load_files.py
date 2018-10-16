@@ -57,9 +57,13 @@ def main_load_files():
     filelist = get_file_list(mp.plate)
     filelist = filelist[mp.ifile0:(mp.ifile0+mp.nfiles)]
     mp.verbose >= 5 and print("loading files...")
-    gv["images"] = load_files(filelist,
-        buffdir = buffdir,
-        callback = lambda index, fileitem: mp.verbose >= 10 and print("loaded %d/%d   (%s/%s)" % (index + 1, mp.nfiles, fileitem.subdir, fileitem.filename)))
+    def dolog(index, fileitem):
+        if mp.verbose >= 10:
+            print("loaded %d/%d   (%s/%s)" % (index + 1, mp.nfiles, fileitem.subdir, fileitem.filename))
+        elif mp.verbose >= 5:
+            from .utils import progress
+            progress(index)
+    gv["images"] = load_files(filelist, buffdir = buffdir, callback = dolog)
     mp.verbose >= 5 and print("loaded files. ok.")
     return gv["images"]
 

@@ -36,5 +36,6 @@ def detect_worm_2d(image):
             maxlabel = i + 1
     bw = (bwl == maxlabel)
 
-for i in range(mp.nfiles):
-    ims[i].bw = ims[i].data
+def main_detect():
+    for i in range(mp.nfiles):
+        ims[i].bw = ims[i].data

@@ -18,3 +18,4 @@ tolerance_diedrate = 0.7
 tolerance_havingdiedrate = 0.5
 minsize = 1000
 maxsize = 3500
+plate_threshold = 35
