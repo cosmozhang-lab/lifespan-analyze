@@ -41,7 +41,7 @@ def shift_image(image, shifting):
     return out
 
 def main_registrate():
-    ims = gv["images"]
+    ims = gv.images
     constants["coors"] = make_coors(ims[0].data.shape)
     c0, ims[0].bw = plate_centroid(ims[0].data)
     ims[0].image = np.array(ims[0].data)
@@ -49,11 +49,11 @@ def main_registrate():
     mp.verbose >= 5 and print("registrating...")
     def dolog(index):
         if mp.verbose >= 10:
-            print("registrated %d/%d" % (index + 1, mp.nfiles))
+            print("registrated %d/%d" % (index + 1, gv.nfiles))
         elif mp.verbose >= 5:
             from .utils import progress
             progress(index)
-    for i in range(1, mp.nfiles):
+    for i in range(1, gv.nfiles):
         c1, ims[i].bw = plate_centroid(ims[i].data)
         oridata = ims[i].data
         ims[i].shifting = c0 - c1

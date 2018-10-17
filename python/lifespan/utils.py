@@ -2,6 +2,7 @@ from datetime import datetime
 from time import time
 import progressbar
 from . import mainparams as mp
+from .global_vars import global_vars as gv
 
 datetime_regfmt = r"\d+\-\d+\-\d+__\d+\-\d+\-\d+"
 datetime_format = "%Y-%m-%d__%H-%M-%S"
@@ -35,9 +36,9 @@ def te(name=None, reset=True):
 _progress_bar = {"bar":None}
 def progress(idx):
     if _progress_bar["bar"] is None:
-        _progress_bar["bar"] = progressbar.ProgressBar(maxval=mp.nfiles, widgets=[
+        _progress_bar["bar"] = progressbar.ProgressBar(maxval=gv.nfiles, widgets=[
             progressbar.Bar("#"), progressbar.Counter(" %(value)d/%(max_value)d"), progressbar.ETA(format="  %(elapsed)s (ETA: %(eta)s)", format_finished="  %(elapsed)s")])
     _progress_bar["bar"].update(idx + 1)
-    if idx + 1 == mp.nfiles:
+    if idx + 1 == gv.nfiles:
         _progress_bar["bar"].finish()
         _progress_bar["bar"] = None

@@ -109,15 +109,15 @@ def death_select(bwldeaths1, bwldeaths2, overlap_threshold):
     return DeathJudgement(numdeaths=numdeaths, bwldeaths=bwldeaths, centroids=centroids)
 
 def main_analyze():
-    manager = ImageManager([item.worms_bw for item in gv["images"]], backward=mp.finterval)
+    manager = ImageManager([item.worms_bw for item in gv.images], backward=mp.finterval)
     manager.init(mp.finterval-1)
     constants["coors"] = make_coors(manager.image_size)
     finterval = mp.finterval
-    djs = [None for i in range(mp.nfiles)]
+    djs = [None for i in range(gv.nfiles)]
     mp.verbose >= 5 and print("analyzing...")
     def dolog(index):
         if mp.verbose >= 10:
-            print("analyzed %d/%d" % (index + 1, mp.nfiles))
+            print("analyzed %d/%d" % (index + 1, gv.nfiles))
         elif mp.verbose >= 5:
             from .utils import progress
             progress(index)
@@ -132,7 +132,7 @@ def main_analyze():
         )
     bwdeaths = dj1.bwldeaths > 1
     # iterate the next frames
-    for i in range(mp.finterval, mp.nfiles):
+    for i in range(mp.finterval, gv.nfiles):
         manager.next()
         dj2 = death_judge(manager, i, mp.finterval, mp.death_overlap_threshold)
         djr = death_select(bwdeaths, dj2.bwldeaths, mp.death_overlap_threshold_for_selecting)
@@ -151,10 +151,10 @@ def main_analyze():
     summary["numdeaths"] = np.array([(np.nan if item is None else item.numdeaths) for item in djs])
     summary["centroids"] = np.array([(np.array([]) if item is None else np.array(item.centroids)) for item in djs], np.object)
     summary["oricentroids"] = np.array([(np.array([]) if item is None else np.array(item.centroids_origin)) for item in djs], np.object)
-    summary["nfiles"] = mp.nfiles
+    summary["nfiles"] = gv.nfiles
     summary["plate"] = mp.plate
-    summary["dirnames"] = np.array([item.subdirname for item in gv["images"]], np.object)
-    summary["imshifts"] = np.array([item.shifting for item in gv["images"]])
+    summary["dirnames"] = np.array([item.subdirname for item in gv.images], np.object)
+    summary["imshifts"] = np.array([item.shifting for item in gv.images])
     mp.verbose >= 5 and print("analyzing. ok.")
     mp.verbose >= 5 and print("writing results...")
     # write result

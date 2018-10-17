@@ -5,6 +5,7 @@ thisdir = os.path.realpath(os.path.split(__file__)[0])
 rootdir = "/store/Data/lifespan-20180718"
 buffdir = os.path.join(thisdir, "buffer")
 plate = "G10"
+plates = ["G10"]
 ifile0 = 403
 nfiles = 105
 immediate = False

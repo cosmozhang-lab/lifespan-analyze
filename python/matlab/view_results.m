@@ -2,7 +2,7 @@ function [] = view_results()
 
 params;
 
-load(fullfile(outdir, 'out.mat'));
+load(fullfile(outdir, [plate, '.out.mat']));
 
 numdeaths(isnan(numdeaths)) = 0;
 numalive = cumsum(numdeaths);
@@ -11,6 +11,7 @@ numalive = numalive(end) - numalive;
 figure(1);
 plot(numalive);
 
+% You may need to BREAK here
 figure(2);
 for i = 1:nfiles
     imshow(image_shift(imread(fullfile(outdir, plate, [dirnames{i} '.tiff'])), fliplr(imshifts(i,:))));
