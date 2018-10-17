@@ -35,5 +35,6 @@ def main_detect():
             progress(index)
     for i in range(gv.nfiles):
         ims[i].worms_bw = detect_worm_2d(ims[i].image)
+        ims[i].image = None
         dolog(i)
     mp.verbose >= 5 and print("detect worms. ok.")

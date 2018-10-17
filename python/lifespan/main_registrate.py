@@ -58,8 +58,9 @@ def main_registrate():
         oridata = ims[i].data
         ims[i].shifting = c0 - c1
         ims[i].image = shift_image(ims[i].data, c0 - c1)
-        ims[i].bw = shift_image(ims[i].bw, c0 - c1)
-        ims[i].image[ims[i].bw == 0] = 0
+        ims[i].data = None
+        # ims[i].bw = shift_image(ims[i].bw, c0 - c1)
+        # ims[i].image[ims[i].bw == 0] = 0
         dolog(i)
     mp.verbose >= 5 and print("registrating. ok.")
 
