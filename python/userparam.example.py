@@ -8,4 +8,5 @@ mp.plate = 'G10'
 mp.ifile0 = 403
 mp.nfiles = 105
 mp.immediate = False
-mp.verbose = 10
+mp.verbose = 5
+mp.outdir = "/disk1/home/cosmo/downloads"

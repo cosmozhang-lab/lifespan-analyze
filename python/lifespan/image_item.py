@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import parse_datetime
+from .utils import parse_datetime, stringify_datetime
 import cv2
 from . import mainparams as mp
 import re, os, shutil
@@ -25,4 +25,12 @@ class ImageItem:
             self.time = parse_datetime(time)
             self.plate = plate
             self.data = data
+        self.image = None
         self.bw = None
+        self.worms_bw = None
+        self.shifting = (0,0)
+
+    @property
+    def subdirname(self):
+        return stringify_datetime(self.time)
+    

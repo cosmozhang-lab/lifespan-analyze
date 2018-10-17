@@ -14,6 +14,9 @@ def parse_datetime(init):
     else:
         return None
 
+def stringify_datetime(datetime_item):
+    return datetime_item.strftime(datetime_format)
+
 _timing = {"ts":0}
 def ts():
     _timing["ts"] = time()

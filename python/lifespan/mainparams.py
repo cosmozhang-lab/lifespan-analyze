@@ -9,13 +9,14 @@ ifile0 = 403
 nfiles = 105
 immediate = False
 verbose = 5
+outdir = "/disk1/home/cosmo/downloads"
 
 # These should not be rewritten
 imgsuffix = ".tiff"
 imagesize = (6680, 6680)
 finterval = 3
-tolerance_diedrate = 0.7
-tolerance_havingdiedrate = 0.5
-minsize = 1000
-maxsize = 3500
+death_overlap_threshold = 0.7
+death_overlap_threshold_for_selecting = 0.5
+worm_minarea = 1000
+worm_maxarea = 3500
 plate_threshold = 35

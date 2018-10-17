@@ -1,41 +1,39 @@
 from . import mainparams as mp
 from .global_vars import global_vars as gv
-from .image_item import ImageItem
 import numpy as np, cv2, torch
 import skimage
-import os
-
-ims = gv["images"]
-
-def torch_imopen(bw, stel):
-    if not isinstance(stel, torch.Tensor):
-        stel = torch.Tensor(stel).cuda()
-    if len(stel.shape) != 4:
-        stel = torch.reshape(stel, [1,1] + stel.shape[-2:])
-    sumstel = torch.sum(stel)
-    kh,kw = tuple(stel.shape[-2:])
-    pdh,pdw = (kh/2,kw/2)
-    bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) == sumstel).type(torch.float32)
-    bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) > 0).type(torch.float32)
-    return bw
+from .algos import fill_holes, torch_bwopen
 
 def detect_worm_2d(image):
     thv, bw = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     # image open operation
-    bw = torch(bw).cuda().type(torch.float32)
-    bw = torch_imopen(bw, np.zeros([5,5]) + 1)
-    # find max-area region
+    bw = torch.Tensor(bw).cuda().reshape([1,1] + list(bw.shape[-2:])).type(torch.float32)
+    bw = torch_bwopen(bw, np.zeros([5,5]) + 1)
+    bw = 1 - bw
+    # detect worms
     bw = bw.type(torch.uint8).cpu().numpy().reshape(list(bw.shape[-2:]))
     bwl,nbwl = skimage.measure.label(bw, return_num=True)
     bwp = skimage.measure.regionprops(bwl)
-    bwa = [x.area for x in bwp]
-    maxlabel, maxarea = (0, 0)
+    bwa = np.array([x.area for x in bwp])
+    bw = np.zeros(tuple(bw.shape), np.uint8)
     for i in range(nbwl):
-        if bwa[i] > maxarea:
-            maxarea = bwa[i]
-            maxlabel = i + 1
-    bw = (bwl == maxlabel)
+        if bwa[i] > mp.worm_minarea and bwa[i] < mp.worm_maxarea:
+            bw += (bwl == (i + 1))
+    # # fill holes
+    # from .algos import fill_holes 
+    # bw = fill_holes(bw)
+    return bw
 
 def main_detect():
+    ims = gv["images"]
+    mp.verbose >= 5 and print("detecting worms...")
+    def dolog(index):
+        if mp.verbose >= 10:
+            print("detected %d/%d" % (index + 1, mp.nfiles))
+        elif mp.verbose >= 5:
+            from .utils import progress
+            progress(index)
     for i in range(mp.nfiles):
-        ims[i].bw = ims[i].data
+        ims[i].worms_bw = detect_worm_2d(ims[i].image)
+        dolog(i)
+    mp.verbose >= 5 and print("detect worms. ok.")
