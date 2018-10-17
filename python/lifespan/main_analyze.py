@@ -125,8 +125,8 @@ def main_analyze():
     dj1 = death_judge(manager, mp.finterval-1, mp.finterval, mp.death_overlap_threshold)
     djs[mp.finterval-1] = DeathResult(
             numdeaths = dj1.numdeaths,
-            bwdeaths = (dj1.bwldeaths > 0).cpu().numpy(),
-            bwdeaths_origin = (dj1.bwldeaths > 0).cpu().numpy(),
+            bwdeaths = None, # (dj1.bwldeaths > 0).cpu().numpy(),
+            bwdeaths_origin = None, # (dj1.bwldeaths > 0).cpu().numpy(),
             centroids = dj1.centroids,
             centroids_origin = dj1.centroids
         )
@@ -139,8 +139,8 @@ def main_analyze():
         bwdeaths = bwdeaths | (dj2.bwldeaths > 0)
         djs[i] = DeathResult(
                 numdeaths = djr.numdeaths,
-                bwdeaths = (dj2.bwldeaths > 0).cpu().numpy(),
-                bwdeaths_origin = (dj2.bwldeaths > 0).cpu().numpy(),
+                bwdeaths = None, # (dj2.bwldeaths > 0).cpu().numpy(),
+                bwdeaths_origin = None, # (dj2.bwldeaths > 0).cpu().numpy(),
                 centroids = djr.centroids,
                 centroids_origin = dj2.centroids
             )

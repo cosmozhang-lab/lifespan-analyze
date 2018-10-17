@@ -64,6 +64,7 @@ def main_load_files():
         elif mp.verbose >= 5:
             from .utils import progress
             progress(index)
+    gv.images = []
     gv.images = load_files(filelist, buffdir = buffdir, callback = dolog)
     mp.verbose >= 5 and print("loaded files. ok.")
     return gv.images
