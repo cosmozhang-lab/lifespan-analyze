@@ -1,5 +1,5 @@
 from . import mainparams as mp
-from .utils import datetime_regfmt
+from .utils import datetime_regfmt, parse_datetime
 from .global_vars import global_vars as gv
 from .image_item import ImageItem
 import numpy as np
@@ -10,6 +10,7 @@ class FileItem:
         self.rootdir = rootdir
         self.subdir = subdir
         self.filename = filename
+        self.datetime = parse_datetime(subdir)
 
     @property
     def path(self):
@@ -34,6 +35,7 @@ def get_file_list(plate):
             filelist
         ))
     ))
+    filelist.sort(key=(lambda x: x.datetime))
     return filelist
 
 def load_files(filelist, buffdir=None, callback=None):

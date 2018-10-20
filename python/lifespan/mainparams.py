@@ -4,6 +4,8 @@ thisdir = os.path.realpath(os.path.split(__file__)[0])
 # These needs to be rewritten
 rootdir = "/store/Data/lifespan-20180718"
 buffdir = os.path.join(thisdir, "buffer")
+bufffmt = ".tiff"
+buffopt = []
 plate = "G10"
 plates = ["G10"]
 ifile0 = 403

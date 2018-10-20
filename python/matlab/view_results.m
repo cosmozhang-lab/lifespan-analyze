@@ -14,7 +14,7 @@ plot(numalive);
 % You may need to BREAK here
 figure(2);
 for i = 1:nfiles
-    imshow(image_shift(imread(fullfile(outdir, plate, [dirnames{i} '.tiff'])), fliplr(imshifts(i,:))));
+    imshow(image_shift(imread(fullfile(outdir, plate, [dirnames{i}, suffix])), fliplr(imshifts(i,:))));
     ctds = centroids{i};
     octds = oricentroids{i};
     if ~isempty(octds)

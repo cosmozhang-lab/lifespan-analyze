@@ -17,10 +17,13 @@ class ImageItem:
             if buffdir is None:
                 self.data = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
             else:
-                bufffilename = os.path.join(buffdir, nameparts[-2] + mp.imgsuffix)
+                bufffilename = os.path.join(buffdir, nameparts[-2] + mp.bufffmt)
                 if not os.path.isfile(bufffilename):
-                    shutil.copyfile(filename, bufffilename)
-                self.data = cv2.imread(bufffilename, cv2.IMREAD_UNCHANGED)
+                    self.data = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+                    cv2.imwrite(bufffilename, self.data, mp.buffopt)
+                    # shutil.copyfile(filename, bufffilename)
+                else:
+                    self.data = cv2.imread(bufffilename, cv2.IMREAD_UNCHANGED)
         else:
             self.time = parse_datetime(time)
             self.plate = plate
