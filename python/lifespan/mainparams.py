@@ -25,13 +25,16 @@ immediate = False
 verbose = 5
 outdir = "/disk1/home/cosmo/downloads"
 startstep = steps.registrate
+savebuff = False
+savejpeg = False
+savesteps = False
 
 # These should not be rewritten
 imgsuffix = ".tiff"
 imagesize = (6680, 6680)
-finterval = 3
+finterval = 10
 death_overlap_threshold = 0.7
 death_overlap_threshold_for_selecting = 0.5
-worm_minarea = 500
+worm_minarea = 750
 worm_maxarea = 3500
 plate_threshold = 35

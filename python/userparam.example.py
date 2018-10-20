@@ -12,3 +12,6 @@ mp.immediate = False
 mp.verbose = 5
 mp.outdir = "/disk1/home/cosmo/downloads"
 mp.startstep = mp.startstep
+mp.savebuff = False
+mp.savejpeg = False
+mp.savesteps = False
