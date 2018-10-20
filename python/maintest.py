@@ -16,8 +16,15 @@ for plate in mp.plates:
     mp.plate = plate
     ts = time.time()
     main_load_files()
-    main_registrate()
-    main_detect()
-    main_analyze()
+    startflag = False
+    if startflag or mp.startstep == mp.steps.registrate:
+        main_registrate()
+        startflag = True
+    if startflag or mp.startstep == mp.steps.detect:
+        main_detect()
+        startflag = True
+    if startflag or mp.startstep == mp.steps.analyze:
+        main_analyze()
+        startflag = True
     te = time.time()
     print("Task %s completed, total time consume: %s\n" % (plate, format_duration(te - ts)))

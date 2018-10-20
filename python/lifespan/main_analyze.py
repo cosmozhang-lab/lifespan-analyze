@@ -74,15 +74,16 @@ def death_judge(manager, fcurrent, finterval, overlap_threshold):
         bwoverlap = bwoverlap * manager[i]
     bwcurrent = manager[fcurrent]
     bwoverlap = bwoverlap + bwcurrent
+    bwoverlap = bwoverlap.type(torch.int32)
     bwl,nbwl = skimage.measure.label(bwcurrent.cpu().numpy(), return_num=True)
     # bwp = skimage.measure.regionprops(bwl)
-    bwl = torch.cuda.ByteTensor(bwl)
-    bwldeaths = torch.cuda.ByteTensor(np.zeros(manager.image_size))
+    bwl = torch.cuda.IntTensor(bwl)
+    bwldeaths = torch.cuda.IntTensor(np.zeros(manager.image_size))
     numdeaths = 0
     centroids = []
     for i in range(nbwl):
         label = i + 1
-        bwregion = (bwl == label)
+        bwregion = (bwl == label).type(torch.int32)
         area_ratio = float(torch.sum(bwregion * bwoverlap == 2)) / float(torch.sum(bwregion))
         centroid = torch_bwcentroid(bwregion, constants["coors"])
         if area_ratio > overlap_threshold:
@@ -94,7 +95,7 @@ def death_judge(manager, fcurrent, finterval, overlap_threshold):
 def death_select(bwldeaths1, bwldeaths2, overlap_threshold):
     bwunion = (bwldeaths1 > 0) + (bwldeaths2 > 0)
     numdeaths = 0
-    bwldeaths = torch.cuda.ByteTensor(np.zeros(tuple(bwunion.shape)))
+    bwldeaths = torch.cuda.IntTensor(np.zeros(tuple(bwunion.shape)))
     nbwl2 = int(torch.max(bwldeaths2))
     centroids = []
     for i in range(nbwl2):
@@ -104,12 +105,12 @@ def death_select(bwldeaths1, bwldeaths2, overlap_threshold):
         centroid = torch_bwcentroid(bwregion, constants["coors"])
         if area_ratio < overlap_threshold:
             numdeaths += 1
-            bwldeaths = bwldeaths + bwregion * numdeaths
+            bwldeaths = bwldeaths + bwregion.type(torch.int32) * numdeaths
             centroids.append(centroid)
     return DeathJudgement(numdeaths=numdeaths, bwldeaths=bwldeaths, centroids=centroids)
 
 def main_analyze():
-    manager = ImageManager([item.worms_bw for item in gv.images], backward=mp.finterval)
+    manager = ImageManager([item.image for item in gv.images], backward=mp.finterval)
     manager.init(mp.finterval-1)
     constants["coors"] = make_coors(manager.image_size)
     finterval = mp.finterval
