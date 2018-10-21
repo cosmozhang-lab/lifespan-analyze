@@ -3,6 +3,7 @@ from .global_vars import global_vars as gv
 import numpy as np, torch
 import skimage
 from .algos import fill_holes, make_coors, torch_bwcentroid
+from .main_load_files import save_shiftings
 
 constants = {
     "coors": None
@@ -60,5 +61,6 @@ def main_registrate():
         ims[i].image = shift_image(ims[i].image, c0 - c1)
         ims[i].save_step(mp.steps.registrate)
         dolog(i)
+    save_shiftings()
     mp.verbose >= 5 and print("registrating. ok.")
 

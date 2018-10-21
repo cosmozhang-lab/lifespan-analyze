@@ -32,7 +32,7 @@ savesteps = False
 # These should not be rewritten
 imgsuffix = ".tiff"
 imagesize = (6680, 6680)
-finterval = 10
+finterval = 24
 death_overlap_threshold = 0.7
 death_overlap_threshold_for_selecting = 0.5
 worm_minarea = 750
