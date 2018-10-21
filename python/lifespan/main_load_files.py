@@ -72,6 +72,8 @@ def load_shiftings(buffdir=None):
         gv.images[i].shifting = tuple(shiftings[i,:])
 
 def save_shiftings(buffdir=None):
+    if not mp.savesteps:
+        return
     buffdir = get_buffdir() if (buffdir is None) else buffdir
     if buffdir is None:
         return
@@ -94,7 +96,12 @@ def main_load_files():
             progress(index)
     gv.images = []
     gv.images = load_files(filelist, buffdir = buffdir, callback = dolog)
-    load_shiftings(buffdir)
+    startstep = mp.startstep
+    while not startstep.before is None:
+        if startstep.before == mp.steps.registrate:
+            load_shiftings(buffdir)
+            break
+        startstep = startstep.before
     mp.verbose >= 5 and print("loaded files. ok.")
     return gv.images
 
