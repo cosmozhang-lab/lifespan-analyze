@@ -1,0 +1,14 @@
+{
+  "name": "datamark",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.4.1",
+    "bootstrap": "^3.3.7",
+    "fontawesome": "^4.7.2",
+    "jquery": "^3.3.1",
+    "popper.js": "^1.14.4"
+  }
+}
