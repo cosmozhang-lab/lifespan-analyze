@@ -23,3 +23,8 @@ urlpatterns = [
     path('', index),
     path('install', install)
 ]
+
+for item in index_apis:
+    urlpatterns.append(path("api/index/" + item[0], item[1]))
+for item in install_apis:
+    urlpatterns.append(path("api/install/" + item[0], item[1]))

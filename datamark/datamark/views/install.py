@@ -4,12 +4,16 @@
 from django.shortcuts import render
 from utils.detect import detect
 from django.http import JsonResponse
+import json
 
 def index(request):
     context = {}
     return render(request, 'install.html', context)
 
 def setup_info(request):
-    context = {}
+    result = json.loads(request.body)
+    return JsonResponse(result)
 
-apis = None
+apis = [
+    ("setup_info", setup_info)
+]

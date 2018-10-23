@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    <link rel="stylesheet" type="text/css" href="/static/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    <div class="container" id="app">
+        {% block main %}
+        {% endblock %}
+    </div>
+    <div class="cover" id="cover">
+        <div class="loading-indicator">
+            <span class="fa fa-spinner fa-spin"></span>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="/static/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="/static/bootstrap/dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
+<script type="text/javascript" src="/static/vue/dist/vue.min.js"></script>
+<script type="text/javascript" src="/static/main.js"></script>
+{% block scripts %}
+{% endblock %}
+</html>

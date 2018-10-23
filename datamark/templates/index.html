@@ -1,15 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Data Mark - Install</title>
-    <link rel="stylesheet" type="text/css" href="/static/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="/static/@fortawesome/fontawesome-free/css/fontawesome.min.css">
-</head>
-<body>
-    <div>Welcome to data-mark!</div>
-</body>
-<script type="text/javascript" src="/static/jquery/dist/jquery.min.js"></script>
-<script type="text/javascript" src="/static/bootstrap/dist/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/static/@fortawesome/fontawesome-free/js/fontawesome.min.js"></script>
-<script type="text/javascript" src="/static/main.js"></script>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}
+Data Mark
+{% endblock %}
+
+{% block main %}
+<div class="row" style="margin-top: 20px">
+    <div class="col-md-12">
+        Welcome to Data-Mark
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+var vue = new Vue({
+    el: "#app",
+    data: {
+    },
+    methods: {
+    }
+})
+</script>
+{% endblock %}
