@@ -9,6 +9,7 @@
     "bootstrap": "^3.3.7",
     "fontawesome": "^4.7.2",
     "jquery": "^3.3.1",
-    "popper.js": "^1.14.4"
+    "popper.js": "^1.14.4",
+    "vue": "^2.5.17"
   }
 }
