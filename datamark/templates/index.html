@@ -5,11 +5,24 @@ Data Mark
 {% endblock %}
 
 {% block main %}
+{% verbatim %}
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-12">
-        Welcome to Data-Mark
+    <div class="col-md-10">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" v-bind:style="{width: percent(statistics.marked, statistics.total)}">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <span>
+            <span>{{ statistics.marked }}</span>
+            <span>of</span>
+            <span>{{ statistics.total }}</span>
+            <span>marked</span>
+        </span>
     </div>
 </div>
+{% endverbatim %}
 {% endblock %}
 
 {% block scripts %}
@@ -17,8 +30,23 @@ Data Mark
 var vue = new Vue({
     el: "#app",
     data: {
+        statistics: {
+            marked: 0,
+            total: 0
+        }
     },
     methods: {
+        percent: function (val, total) {
+            return val / total * 100 + "%";
+        }
+    },
+    created: function () {
+        var that = this;
+        $.get('/api/index/statistics', function(data) {
+            that.statistics.marked = data.marked;
+            that.statistics.total = data.total;
+        });
+        status_loading(false);
     }
 })
 </script>

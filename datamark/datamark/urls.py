@@ -15,16 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views.index import index as index, apis as index_apis
-from .views.install import index as install, apis as install_apis
+from mainapp.urls import urls
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', index),
-    path('install', install)
+    path('admin/', admin.site.urls)
 ]
 
-for item in index_apis:
-    urlpatterns.append(path("api/index/" + item[0], item[1]))
-for item in install_apis:
-    urlpatterns.append(path("api/install/" + item[0], item[1]))
+for item in urls:
+    urlpatterns.append(path(item[0], item[1]))

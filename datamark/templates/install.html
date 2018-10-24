@@ -5,37 +5,77 @@ Data Mark - Install
 {% endblock %}
 
 {% block main %}
-<div class="row" style="margin-top: 20px">
+{% verbatim %}
+<div class="row">
     <div class="col-md-12">
-        <div class="input-group">
-            <span class="input-group-addon">Directory</span>
-            <input type="text" class="form-control" placeholder="/path/to/datas" id="directory-input" v-model="form.directory">
-            <a class="input-group-addon btn btn-default" href="javascript:;">Scan</a>
+        <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+                <div class="input-group">
+                    <span class="input-group-addon">Directory</span>
+                    <input type="text" class="form-control" placeholder="/path/to/datas" id="directory-input" v-model="form.directory">
+                    <a class="input-group-addon btn btn-default" href="javascript:;">Scan</a>
+                </div>
+                <div id="scan-result"></div>
+            </div>
         </div>
-        <div id="scan-result"></div>
+        <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+                <div class="input-group">
+                    <span class="input-group-addon">Plates</span>
+                    <input type="text" class="form-control" placeholder="G4,G5,G6,H4,..." id="plates-input" v-model="form.plates">
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin-top: 20px">
+            <div class="col-md-4 col-xs-6">
+                <div class="input-group">
+                    <span class="input-group-addon">From</span>
+                    <input type="text" class="form-control" placeholder="0" id="from-input" v-model="form.from">
+                    <span class="input-group-addon">To</span>
+                    <input type="text" class="form-control" placeholder="Inf" id="to-input" v-model="form.to">
+                </div>
+            </div>
+            <div class="col-xs-2 col-md-offset-6 col-xs-offset-4">
+                <a class="form-control btn btn-primary" href="javascript:;" v-on:click="setup">Setup</a>
+            </div>
+        </div>
     </div>
 </div>
-<div class="row" style="margin-top: 20px">
+<div class="row" v-show="setup_info.loaded">
     <div class="col-md-12">
-        <div class="input-group">
-            <span class="input-group-addon">Plates</span>
-            <input type="text" class="form-control" placeholder="G4,G5,G6,H4,..." id="plates-input" v-model="form.plates">
+        <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+                <table class="table">
+                    <tr>
+                        <th>Plate</th>
+                        <th>Total</th>
+                        <th>Descrition</th>
+                    </tr>
+                    <tr v-for="item in setup_info.list">
+                        <td>{{ item.plate }}</td>
+                        <td>{{ item.number }}</td>
+                        <td>
+                            <span style="color: #999; font-style: italic;">from</span>
+                            <span>&nbsp;{{item.from}}&nbsp;</span>
+                            <span style="color: #999; font-style: italic;">to</span>
+                            <span>&nbsp;{{item.to}}&nbsp;</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+                <span style="font-size: 1.5rem; font-weight: bold;">Are these OK?</span>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <a href="javascript:;" class="btn btn-primary" v-on:click="confirm()">Confirm to SETUP</a>
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <a href="javascript:;" class="btn btn-default" v-on:click="cancel()">Cancel</a>
+            </div>
         </div>
     </div>
 </div>
-<div class="row" style="margin-top: 20px">
-    <div class="col-md-4 col-xs-6">
-        <div class="input-group">
-            <span class="input-group-addon">From</span>
-            <input type="text" class="form-control" placeholder="0" id="from-input" v-model="form.from">
-            <span class="input-group-addon">To</span>
-            <input type="text" class="form-control" placeholder="Inf" id="to-input" v-model="form.to">
-        </div>
-    </div>
-    <div class="col-xs-2 col-md-offset-6 col-xs-offset-4">
-        <a class="form-control btn btn-primary" href="javascript:;" v-on:click="setup">Setup</a>
-    </div>
-</div>
+{% endverbatim %}
 {% endblock %}
 
 {% block scripts %}
@@ -48,17 +88,80 @@ var vue = new Vue({
             plates: "",
             from: "",
             to: ""
+        },
+        setup_info: {
+            loaded: false,
+            list: null,
+            data: null
         }
     },
     methods: {
         setup: function () {
+            var that = this;
+            var data = {
+                directory: this.form.directory,
+                plates: this.form.plates,
+                from: this.form.from,
+                to: this.form.to
+            };
+            window.localStorage.install_formdata = JSON.stringify(data);
             status_loading(true);
-            setTimeout(function() {
+            $.ajax({
+                url: '/api/install/setup_info',
+                type: 'POST',
+                data: JSON.stringify(data)
+            })
+            .done(function(data) {
+                var infolist = [];
+                for (var plate in data) {
+                    var filelist = data[plate];
+                    infolist.push({
+                        plate: plate,
+                        number: filelist.length,
+                        from: filelist[0].subdir,
+                        to: filelist[filelist.length-1].subdir
+                    });
+                }
+                that.setup_info.loaded = true;
+                that.setup_info.list = infolist;
+                that.setup_info.rawdata = JSON.stringify(data);
+            })
+            .fail(function() {
+            })
+            .always(function() {
                 status_loading(false);
-            }, 1000);
+            });
+        },
+        confirm: function() {
+            status_loading(true);
+            var that = this;
+            var data = this.setup_info.rawdata;
+            $.ajax({
+                url: '/api/install/setup_confirm',
+                type: 'POST',
+                data: data
+            })
+            .done(function(data) {
+                window.location.href = "/";
+            })
+            .fail(function() {
+            })
+            .always(function() {
+                status_loading(false);
+            });
+        },
+        cancel: function() {
+            this.setup_info.loaded = false;
         }
     },
     created: function () {
+        if (window.localStorage.install_formdata) {
+            var install_formdata = JSON.parse(window.localStorage.install_formdata);
+            this.form.directory = install_formdata.directory;
+            this.form.plates = install_formdata.plates;
+            this.form.from = install_formdata.from;
+            this.form.to = install_formdata.to;
+        }
         status_loading(false);
     }
 });
