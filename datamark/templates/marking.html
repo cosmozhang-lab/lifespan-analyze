@@ -6,23 +6,42 @@ Data Mark
 
 {% block stylesheets %}
 <style type="text/css">
-.mode-bar {
+.mode-bar-wrapper {
     text-align: right;
 }
-.mode-bar .mode-item {
+.mode-bar {
     display: inline-block;
-    min-width: 60px;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 5px;
+    overflow: hidden;
+    font-size: 0;
+}
+.mode-bar .mode-item {
+    font-size: 14px;
+    display: inline-block;
+    min-width: 30px;
     height: 30px;
     line-height: 30px;
     text-align: center;
-    border-radius: 5px;
-    background-color: #eeeeee;
-    margin-left: 10px;
+    background-color: #666666;
+    color: white;
+    margin-left: 2px;
     user-select: none;
     padding: 0 10px;
+    cursor: pointer;
+}
+.mode-bar .mode-item:first-child {
+    margin-left: 0;
+}
+.mode-bar .mode-item:hover {
+    background-color: #999999;
 }
 .mode-bar .mode-item.active {
     background-color: #00ff33;
+}
+.mode-bar .mode-item.active:hover {
+    background-color: #33ff66;
 }
 
 .image-wrapper {
@@ -33,7 +52,11 @@ Data Mark
     position: relative;
     user-select: none;
 }
-.image-wrapper.zooming {
+.image-wrapper.zoomout
+.image-wrapper.zoomin {
+    cursor: default;
+}
+.image-wrapper.pan {
     cursor: move;
 }
 .image-wrapper.marking.mark_select {
@@ -47,6 +70,18 @@ Data Mark
     position: absolute;
     user-select: none;
 }
+.image-wrapper .framebox {
+    border: 1px black solid;
+}
+.image-wrapper .framebox.zoomin {
+    border-width: 1px;
+    border-color: #999;
+    border-style: dashed;
+}
+.image-wrapper .framebox.mark {
+    border-width: 2px;
+    border-color: #993333;
+}
 </style>
 {% endblock %}
 
@@ -54,17 +89,17 @@ Data Mark
 {% include "authbar.html" %}
 {% verbatim %}
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-2">
+    <div class="col-sm-2">
         <span>Dataset: </span>
         <b>{{ setname }}</b>
     </div>
-    <div class="col-md-8">
+    <div class="col-sm-8">
         <div class="progress">
             <div class="progress-bar" role="progressbar" v-bind:style="{width: percent(statistics.marked, statistics.total)}">
             </div>
         </div>
     </div>
-    <div class="col-md-2">
+    <div class="col-sm-2">
         <span>
             <span>{{ statistics.marked }}</span>
             <span>of</span>
@@ -74,10 +109,10 @@ Data Mark
     </div>
 </div>
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-6">
+    <div class="col-sm-6">
         <span>{{ sample.title }}</span>
     </div>
-    <div class="col-md-6">
+    <div class="col-sm-6 mode-bar-wrapper">
         <div class="mode-bar">
             <span class="mode-item">Zooming (Z)</span>
             <span class="mode-item">Marking (X)</span>
@@ -85,9 +120,10 @@ Data Mark
     </div>
 </div>
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-12">
+    <div class="col-sm-12">
         <div class="image-wrapper" v-bind:class="viewerClasses">
-            <img v-bind:src="sample.image.src">
+            <img v-bind:src="sample.image.src" v-bind:style="viewerImgStyles">
+            <div class=""></div>
         </div>
     </div>
 </div>
@@ -109,10 +145,12 @@ var vue = new Vue({
             image: (function (src) { var img = new Image(); img.src = src; return img })("/static/runtime/sample.jpg")
         },
         viewer: {
-            mode: "zooming",
+            mode: "zoomout",
             pressed: false,
+            pressmoved: false,
             presspos: { x: 0, y: 0 },
-            imagepos: { x: 0, y: 0 }
+            imagepos: { x: 0, y: 0 },
+            imagepresspos: { x: 0, y: 0 }
         }
     },
     methods: {
@@ -124,7 +162,9 @@ var vue = new Vue({
         viewerClasses: function () {
             var that = this;
             return {
-                zooming: that.viewer.mode == "zooming",
+                zoomout: that.viewer.mode == "zoomout",
+                zoomin: that.viewer.mode == "zoomin",
+                pan: that.viewer.mode == "pan",
                 marking: that.viewer.mode == "marking",
                 pressed: that.viewer.pressed,
                 mark_select: true,
@@ -142,13 +182,13 @@ var vue = new Vue({
     created: function () {
         var that = this;
         this.setname = window.location.query.setname;
-        $.get('/api/marking/statistics?setname=' + this.setname, function(data) {
-            data = data.data;
-            that.statistics.marked = data.marked;
-            that.statistics.total = data.total;
-            status_loading(false);
-        });
-
+        // $.get('/api/marking/statistics?setname=' + this.setname, function(data) {
+        //     data = data.data;
+        //     that.statistics.marked = data.marked;
+        //     that.statistics.total = data.total;
+        //     status_loading(false);
+        // });
+        status_loading(false);
     }
 });
 $(function () {
@@ -157,8 +197,29 @@ $(function () {
     });
     $(".image-wrapper").on('mousedown', function(event) {
         vue.viewer.pressed = true;
-        console.log(event);
+        vue.viewer.pressmoved = false;
         vue.viewer.presspos.x = event.clientX;
+        vue.viewer.presspos.y = event.clientY;
+        vue.viewer.imagepresspos.x = vue.viewer.imagepos.x;
+        vue.viewer.imagepresspos.y = vue.viewer.imagepos.y;
+    });
+    $(".image-wrapper").on('mousemove', function(event) {
+        if (vue.viewer.pressed) vue.viewer.pressmoved = true;
+        if (vue.viewer.mode == "pan") {
+            if (vue.viewer.pressed) {
+                var d = {};
+                d.x = event.clientX - vue.viewer.presspos.x;
+                d.y = event.clientY - vue.viewer.presspos.y;
+                vue.viewer.imagepos.x = vue.viewer.imagepresspos.x + d.x;
+                vue.viewer.imagepos.y = vue.viewer.imagepresspos.y + d.y;
+            }
+        } else if (vue.viewer.mode == "zoomin") {
+        }
+    });
+    $(".image-wrapper").on('mouseup', function(event) {
+        vue.viewer.pressed = false;
+        if (vue.viewer.mode == "pan") {
+        }
     });
 });
 </script>

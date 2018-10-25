@@ -8,15 +8,15 @@ Data Mark - Install
 {% include "authbar.html" %}
 {% verbatim %}
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-sm-12">
         <div class="row" style="margin-top: 20px">
-            <div class="col-md-3">
+            <div class="col-sm-3">
                 <div class="input-group">
                     <span class="input-group-addon">Name</span>
                     <input type="text" class="form-control" placeholder="Dataset name" id="name-input" v-model="form.setname">
                 </div>
             </div>
-            <div class="col-md-9">
+            <div class="col-sm-9">
                 <div class="input-group">
                     <span class="input-group-addon">Directory</span>
                     <input type="text" class="form-control" placeholder="/path/to/datas" id="directory-input" v-model="form.directory">
@@ -24,7 +24,7 @@ Data Mark - Install
             </div>
         </div>
         <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
+            <div class="col-sm-12">
                 <div class="input-group">
                     <span class="input-group-addon">Plates</span>
                     <input type="text" class="form-control" placeholder="G4,G5,G6,H4,..." id="plates-input" v-model="form.plates">
@@ -47,9 +47,9 @@ Data Mark - Install
     </div>
 </div>
 <div class="row" v-show="setup_info.loaded">
-    <div class="col-md-12">
+    <div class="col-sm-12">
         <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
+            <div class="col-sm-12">
                 <table class="table">
                     <tr>
                         <th>Plate</th>
@@ -70,7 +70,7 @@ Data Mark - Install
             </div>
         </div>
         <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
+            <div class="col-sm-12">
                 <span style="font-size: 1.5rem; font-weight: bold;">Are these OK?</span>
                 <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
                 <a href="javascript:;" class="btn btn-primary" v-on:click="confirm()">Confirm to SETUP</a>

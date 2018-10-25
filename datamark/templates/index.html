@@ -33,18 +33,18 @@ Data Mark
 {% include "authbar.html" %}
 {% verbatim %}
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-12">
+    <div class="col-sm-12">
         <a v-for="item in datasets" class="row dataset-item" v-bind:href="marking_link(item.setname)">
-            <div class="col-md-2">
+            <div class="col-sm-2">
                 <div><b>{{ item.setname }}</b></div>
             </div>
-            <div class="col-md-8">
+            <div class="col-sm-8">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" v-bind:style="{width: percent(item.marked, item.total)}">
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-sm-2">
                 <span>
                     <span>{{ item.marked }}</span>
                     <span>of</span>

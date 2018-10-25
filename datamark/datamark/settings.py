@@ -25,7 +25,7 @@ SECRET_KEY = 'ysq1mwqcd&-@)jc+yi-atyerso$#u#hw(19*zj_)&s$+kd60@f'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["tlab.ink"]
+ALLOWED_HOSTS = ["localhost", "tlab.ink"]
 
 
 # Application definition
