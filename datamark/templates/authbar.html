@@ -1,0 +1,17 @@
+{% if user %}
+<div class="row" style="margin-top: 20px">
+    <div class="col-md-12">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">DataMark</a>
+                </div>
+                <form class="nav navbar-nav navbar-right">
+                    <a href="javascript:;" class="btn btn-default navbar-btn navbar-right" id="button-signout" style="margin-right: 20px;">Sign out</a>
+                    <p class="navbar-text navbar-right" style="margin-right: 20px;">Signed in as <span style="text-decoration: underline;">{{ user.username }}</span></p>
+                </form>
+            </div>
+        </nav>
+    </div>
+</div>
+{% endif %}

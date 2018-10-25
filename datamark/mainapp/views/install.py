@@ -5,10 +5,15 @@ from django.shortcuts import render
 from utils.detect import detect
 from django.http import JsonResponse
 from utils.files import FileFinder, FileItem
-from mainapp.models import Sample
+from mainapp.models import Dataset, Sample
+from .login import authbar, getuser, redirectLogin
 
 def index(request):
+    user = getuser(request)
+    if user is None:
+        return redirectLogin(request)
     context = {}
+    authbar(request, context)
     return render(request, 'install.html', context)
 
 def setup_info(request):
@@ -27,15 +32,26 @@ def setup_info(request):
     filelists = FileFinder(directory).get_file_lists(plates, ifile0, nfiles)
     for plate in filelists:
         filelists[plate] = [item.to_json() for item in filelists[plate]]
-    return JsonResponse(filelists)
+    return JsonResponse({
+        "success": True,
+        "data": filelists
+    })
 
 def setup_confirm(request):
-    Sample.objects.all().delete()
+    setname = request.GET["setname"] or None
+    if setname is None:
+        raise ValueError("setname must be set")
+    dataset = Dataset.objects.filter(setname=setname).first()
+    if dataset is None:
+        dataset = Dataset(setname=setname)
+        dataset.save()
+    else:
+        Sample.objects.filter(dataset=dataset).delete()
     data = request.jsondata
     for plate in data:
         for i in range(len(data[plate])):
             item = FileItem.from_json(data[plate][i])
-            o = Sample(seq=i+1, plate=plate, rootdir=item.rootdir, subdir=item.subdir, filename=item.filename)
+            o = Sample(dataset=dataset, seq=i+1, plate=plate, rootdir=item.rootdir, subdir=item.subdir, filename=item.filename)
             o.save()
     return JsonResponse({"success": True})
 

@@ -5,17 +5,22 @@ Data Mark - Install
 {% endblock %}
 
 {% block main %}
+{% include "authbar.html" %}
 {% verbatim %}
 <div class="row">
     <div class="col-md-12">
         <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-addon">Name</span>
+                    <input type="text" class="form-control" placeholder="Dataset name" id="name-input" v-model="form.setname">
+                </div>
+            </div>
+            <div class="col-md-9">
                 <div class="input-group">
                     <span class="input-group-addon">Directory</span>
                     <input type="text" class="form-control" placeholder="/path/to/datas" id="directory-input" v-model="form.directory">
-                    <a class="input-group-addon btn btn-default" href="javascript:;">Scan</a>
                 </div>
-                <div id="scan-result"></div>
             </div>
         </div>
         <div class="row" style="margin-top: 20px">
@@ -84,6 +89,7 @@ var vue = new Vue({
     el: "#app",
     data: {
         form: {
+            setname: "",
             directory: "",
             plates: "",
             from: "",
@@ -99,6 +105,7 @@ var vue = new Vue({
         setup: function () {
             var that = this;
             var data = {
+                setname: this.form.setname,
                 directory: this.form.directory,
                 plates: this.form.plates,
                 from: this.form.from,
@@ -112,6 +119,7 @@ var vue = new Vue({
                 data: JSON.stringify(data)
             })
             .done(function(data) {
+                data = data.data;
                 var infolist = [];
                 for (var plate in data) {
                     var filelist = data[plate];
@@ -137,7 +145,7 @@ var vue = new Vue({
             var that = this;
             var data = this.setup_info.rawdata;
             $.ajax({
-                url: '/api/install/setup_confirm',
+                url: '/api/install/setup_confirm?setname=' + this.form.setname,
                 type: 'POST',
                 data: data
             })
@@ -157,6 +165,7 @@ var vue = new Vue({
     created: function () {
         if (window.localStorage.install_formdata) {
             var install_formdata = JSON.parse(window.localStorage.install_formdata);
+            this.form.setname = install_formdata.setname;
             this.form.directory = install_formdata.directory;
             this.form.plates = install_formdata.plates;
             this.form.from = install_formdata.from;

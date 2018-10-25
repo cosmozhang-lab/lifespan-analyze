@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Data Mark
+{% endblock %}
+
+{% block stylesheets %}
+<style type="text/css">
+.login-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+}
+.login-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    margin-left: -150px;
+    margin-top: -100px;
+    background-color: #F6F9FF;
+    border: 1px #6699CC solid;
+    border-radius: 8px;
+    box-shadow: 0 0 30px -10px #3366CC;
+    overflow: hidden;
+}
+.login-box-title {
+    background-color: #6699CC;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    font-family: Helvitica;
+    padding: 10px 20px;
+}
+.login-box-body {
+    padding: 20px;
+    padding-top: 10px;
+}
+</style>
+{% endblock %}
+
+{% block main %}
+{% verbatim %}
+<div class="login-wrapper">
+    <div class="login-box">
+        <div class="login-box-title">
+            <span>Register</span>
+        </div>
+        <div class="login-box-body">
+            <div class="row" style="margin-top: 10px">
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                        <input type="text" class="form-control" placeholder="Username" id="username-input" v-model="form.username">
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 10px">
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-key"></i></span>
+                        <input type="password" class="form-control" placeholder="Password" id="password-input" v-model="form.password">
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 10px">
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-key"></i></span>
+                        <input type="password" class="form-control" placeholder="Confirm password" id="repeat-input" v-model="form.repeat">
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 10px">
+                <div class="col-md-12">
+                    <a href="javascript:;" class="form-control btn btn-primary" v-on:click="doRegister">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endverbatim %}
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+var vue = new Vue({
+    el: "#app",
+    data: {
+        form: {
+            username: "",
+            password: "",
+            repeat: ""
+        }
+    },
+    methods: {
+        doRegister: function() {
+            var username = this.form.username;
+            var password = this.form.password;
+            var repeat = this.form.repeat;
+            if (!(/^[a-zA-Z][a-zA-Z0-9_]*$/.test(username))) {
+                messagebox("Register", "Username is invalid");
+                return;
+            }
+            if (!(/^[a-zA-Z0-9_]+$/.test(password))) {
+                messagebox("Register", "Password is invalid");
+                return;
+            }
+            if (password != repeat) {
+                messagebox("Register", "Password confirmation failed");
+                return;
+            }
+            status_loading(true);
+            $.ajax({
+                url: '/api/login/register',
+                type: 'POST',
+                data: JSON.stringify({ username: username, password: password })
+            })
+            .done(function(data) {
+                if (data.success) {
+                    save_login(username, password);
+                    var returnpath = window.location.query.return;
+                    if (returnpath) returnpath = unescape(returnpath);
+                    window.location.href = returnpath || "/";
+                } else {
+                    messagebox("Register", "Register failed. Because: " + data.reason);
+                }
+            })
+            .fail(function() {
+            })
+            .always(function() {
+                status_loading(false);
+            });
+        }
+    },
+    created: function () {
+        status_loading(false);
+    }
+})
+</script>
+{% endblock %}

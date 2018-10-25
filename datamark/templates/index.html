@@ -4,24 +4,58 @@
 Data Mark
 {% endblock %}
 
+{% block stylesheets %}
+<style type="text/css">
+.dataset-item {
+    display: block;
+    padding: 20px 0;
+    border-top: 1px #999 solid;
+    height: 60px;
+}
+.dataset-item:first-child {
+    border-top: none;
+}
+.dataset-item,
+.dataset-item:link,
+.dataset-item:visited,
+.dataset-item:active,
+.dataset-item:hover {
+    color: inherit;
+    text-decoration: none;
+}
+.dataset-item:hover {
+    background-color: #eee;
+}
+</style>
+{% endblock %}
+
 {% block main %}
+{% include "authbar.html" %}
 {% verbatim %}
 <div class="row" style="margin-top: 20px">
-    <div class="col-md-10">
-        <div class="progress">
-            <div class="progress-bar" role="progressbar" v-bind:style="{width: percent(statistics.marked, statistics.total)}">
+    <div class="col-md-12">
+        <a v-for="item in datasets" class="row dataset-item" v-bind:href="marking_link(item.setname)">
+            <div class="col-md-2">
+                <div><b>{{ item.setname }}</b></div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <span>
-            <span>{{ statistics.marked }}</span>
-            <span>of</span>
-            <span>{{ statistics.total }}</span>
-            <span>marked</span>
-        </span>
+            <div class="col-md-8">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" v-bind:style="{width: percent(item.marked, item.total)}">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <span>
+                    <span>{{ item.marked }}</span>
+                    <span>of</span>
+                    <span>{{ item.total }}</span>
+                    <span>marked</span>
+                </span>
+            </div>
+        </a>
     </div>
 </div>
+
 {% endverbatim %}
 {% endblock %}
 
@@ -30,21 +64,20 @@ Data Mark
 var vue = new Vue({
     el: "#app",
     data: {
-        statistics: {
-            marked: 0,
-            total: 0
-        }
+        datasets: []
     },
     methods: {
         percent: function (val, total) {
             return val / total * 100 + "%";
+        },
+        marking_link: function (setname) {
+            return "/marking?setname=" + setname;
         }
     },
     created: function () {
         var that = this;
-        $.get('/api/index/statistics', function(data) {
-            that.statistics.marked = data.marked;
-            that.statistics.total = data.total;
+        $.get('/api/index/datasets', function(data) {
+            that.datasets = data.data;
         });
         status_loading(false);
     }
