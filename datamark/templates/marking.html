@@ -13,8 +13,6 @@ Data Mark
     display: inline-block;
     text-align: center;
     white-space: nowrap;
-    border-radius: 5px;
-    overflow: hidden;
     font-size: 0;
 }
 .mode-bar .mode-item {
@@ -33,15 +31,26 @@ Data Mark
 }
 .mode-bar .mode-item:first-child {
     margin-left: 0;
+    border-radius: 5px 0 0 5px;
+}
+.mode-bar .mode-item:last-child {
+    border-radius: 0 5px 5px 0;
 }
 .mode-bar .mode-item:hover {
     background-color: #999999;
 }
-.mode-bar .mode-item.active {
+/*.mode-bar .mode-item.active {
     background-color: #00cc33;
 }
 .mode-bar .mode-item.active:hover {
     background-color: #33dd66;
+}*/
+.mode-bar .mode-item.active {
+    position: relative;
+    top: -2px;
+}
+.mode-bar .mode-item.mode-item-colored {
+    text-shadow: 0 0 1px white;
 }
 
 .image-wrapper {
@@ -74,6 +83,7 @@ Data Mark
 }
 .image-wrapper .framebox {
     border: 1px black solid;
+    background-color: transparent;
 }
 .image-wrapper .framebox.zoomin {
     border-width: 1px;
@@ -85,6 +95,9 @@ Data Mark
     border-width: 2px;
     border-color: #993333;
     box-shadow: 0 0 5px -1px white;
+}
+.image-wrapper .framebox.mark.highlight {
+    box-shadow: 0 0 5px 3px white;
 }
 </style>
 {% endblock %}
@@ -123,14 +136,38 @@ Data Mark
             <span class="mode-item" v-on:click="toggleMode('pan')"     v-bind:class="{ active: (viewer.mode == 'pan') }"     ><i class="fa fa-arrows-alt"></i></span>
             <span class="mode-item" v-on:click="toggleMode('mark')"    v-bind:class="{ active: (viewer.mode == 'mark') }"    ><i class="fa fa-marker"></i></span>
         </div>
+        <div class="mode-bar" v-show="viewer.mode == 'mark'" style="margin-left: 20px;">
+            <!-- followings are the mark mode selections -->
+            <span class="mode-item mode-item-colored"
+                data-toggle="tooltip" data-placement="top" title="Worm"
+                style="color: #3399FF"
+                v-on:click="toggleMarkMode('target')"
+                v-bind:class="{ active: (viewer.markmode == 'target') }">W</span>
+            <span class="mode-item mode-item-colored"
+                data-toggle="tooltip" data-placement="top" title="False"
+                style="color: #FF6666"
+                v-on:click="toggleMarkMode('mistake')"
+                v-bind:class="{ active: (viewer.markmode == 'mistake') }">F</span>
+            <span class="mode-item mode-item-colored"
+                data-toggle="tooltip" data-placement="top" title="Unknown"
+                style="color: #FF66FF"
+                v-on:click="toggleMarkMode('unknown')"
+                v-bind:class="{ active: (viewer.markmode == 'unknown') }">U</span>
+            <span class="mode-item mode-item-colored"
+                data-toggle="tooltip" data-placement="top" title="Blank"
+                style="color: #FFCC00"
+                v-on:click="toggleMarkMode('blank')"
+                v-bind:class="{ active: (viewer.markmode == 'blank') }">B</span>
+        </div>
     </div>
 </div>
 <div class="row" style="margin-top: 20px">
     <div class="col-sm-12">
         <div id="image-wrapper" class="image-wrapper" v-bind:class="viewerClasses">
-            <img id="image" v-bind:src="sample.image.src" v-bind:style="viewerImgStyles">
+            <img id="image" v-bind:src="viewer.imgsrc" v-bind:style="viewerImgStyles" v-on:load="onViewerImageLoad">
             <div class="framebox zoomin" v-show="viewer.zoomframe.show" v-bind:style="viewerZoomFrameStyles"></div>
-            <div v-for="markitem in sample.marks" class="framebox mark" v-bind:style="viewerMarkBoxStyles(markitem)"></div>
+            <div v-for="markitem in viewerMarks" class="framebox mark" v-bind:style="markitem.styles"></div>
+            <div v-show="viewerActiveMark.show" class="framebox mark" v-bind:class="{highlight:viewerActiveMark.highlight}" v-bind:style="viewerActiveMark.styles"></div>
         </div>
     </div>
 </div>
@@ -149,7 +186,13 @@ var vue = new Vue({
         },
         sample: {
             title: "G7 / 2018-08-28 20",
-            image: (function (src) { var img = new Image(); img.src = src; return img })("/static/runtime/sample.jpg"),
+            image: (function () {
+                var img = new Image();
+                img.onload = function () {
+                    vue.viewer.imgsrc = img.src;
+                };
+                return img;
+            })(),
             marks: [
                 { type: "target", x: 1652, y: 2013, width: 224, height: 120 },
                 { type: "target", x: 3557, y: 1525, width: 200, height: 128 },
@@ -161,22 +204,22 @@ var vue = new Vue({
                 { type: "target", x: 4341, y: 5445, width: 160, height: 136 },
                 { type: "target", x: 2109, y: 4333, width: 208, height: 104 },
                 { type: "target", x: 4653, y: 5573, width: 216, height: 112 },
-                { type: "target", x: 5397, y: 3557, width: 128, height: 184 },
-                { type: "target", x: 1444, y: 5101, width: 128, height: 160 },
-                { type: "mistake", x: 2645, y: 1117, width: 104, height: 120 },
-                { type: "mistake", x: 2765, y: 1181, width: 104, height: 120 },
-                { type: "mistake", x: 2733, y: 933, width: 88, height: 88 },
-                { type: "mistake", x: 3389, y: 1045, width: 168, height: 120 },
-                { type: "mistake", x: 2701, y: 2557, width: 96, height: 136 },
-                { type: "mistake", x: 3309, y: 3093, width: 128, height: 128 },
-                { type: "mistake", x: 4381, y: 3397, width: 120, height: 120 },
-                { type: "mistake", x: 4437, y: 5029, width: 104, height: 176 },
-                { type: "mistake", x: 908, y: 4141, width: 128, height: 104 },
-                { type: "mistake", x: 932, y: 4245, width: 136, height: 88 },
-                { type: "mistake", x: 1316, y: 2669, width: 80, height: 104 },
-                { type: "mistake", x: 1484, y: 2509, width: 80, height: 120 },
-                { type: "mistake", x: 1412, y: 2669, width: 104, height: 104 },
-                { type: "mistake", x: 1452, y: 2773, width: 104, height: 64 },
+                { type: "unknown", x: 5397, y: 3557, width: 128, height: 184 },
+                { type: "unknown", x: 1444, y: 5101, width: 128, height: 160 },
+                { type: "unknown", x: 2645, y: 1117, width: 104, height: 120 },
+                { type: "unknown", x: 2765, y: 1181, width: 104, height: 120 },
+                { type: "unknown", x: 2733, y: 933, width: 88, height: 88 },
+                { type: "unknown", x: 3389, y: 1045, width: 168, height: 120 },
+                { type: "unknown", x: 2701, y: 2557, width: 96, height: 136 },
+                { type: "unknown", x: 3309, y: 3093, width: 128, height: 128 },
+                { type: "unknown", x: 4381, y: 3397, width: 120, height: 120 },
+                { type: "unknown", x: 4437, y: 5029, width: 104, height: 176 },
+                { type: "unknown", x: 908, y: 4141, width: 128, height: 104 },
+                { type: "unknown", x: 932, y: 4245, width: 136, height: 88 },
+                { type: "unknown", x: 1316, y: 2669, width: 80, height: 104 },
+                { type: "unknown", x: 1484, y: 2509, width: 80, height: 120 },
+                { type: "unknown", x: 1412, y: 2669, width: 104, height: 104 },
+                { type: "unknown", x: 1452, y: 2773, width: 104, height: 64 },
                 { type: "mistake", x: 1572, y: 2653, width: 72, height: 56 },
                 { type: "mistake", x: 1596, y: 2733, width: 88, height: 56 },
                 { type: "mistake", x: 1300, y: 2901, width: 88, height: 80 },
@@ -185,10 +228,16 @@ var vue = new Vue({
                 { type: "mistake", x: 4533, y: 4893, width: 104, height: 112 },
                 { type: "mistake", x: 3013, y: 3885, width: 96, height: 96 },
                 { type: "mistake", x: 2301, y: 5965, width: 112, height: 120 }
-            ]
+            ],
+            activeMark: { type: null, show: false, x: 0, y: 0, width: 0, height: 0 },
+            marksize: { width: 256, height: 256 }
         },
         viewer: {
+            el: null,
+            img: null,
+            imgsrc: "",
             mode: null,
+            markmode: null,
             pressed: false,
             pressmoved: false,
             presspos: { x: 0, y: 0 },
@@ -215,6 +264,106 @@ var vue = new Vue({
                 this.clearMouse();
             }
         },
+        toggleMarkMode: function (modename) {
+            if (this.viewer.markmode == modename) {
+                this.viewer.markmode = null;
+                this.clearMouse();
+            } else {
+                this.viewer.markmode = modename;
+                this.clearMouse();
+            }
+        },
+        onViewerImageLoad: function() {
+            this.resetZoom();
+        },
+        clickZoom: function (event) {
+            // clicking zoom in/out
+            var s = (this.viewer.mode == "zoomout") ? 0.8 : 1.25;
+            var wrapperpos = this.viewer.el.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var mx = event.clientX - wrapperx;
+            var my = event.clientY - wrappery;
+            var imw = this.viewer.imagerect.width;
+            var imh = this.viewer.imagerect.height;
+            var imx = this.viewer.imagerect.x;
+            var imy = this.viewer.imagerect.y;
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var ox = mx - imx;
+            var oy = my - imy;
+            var nx = mx - ox * s;
+            var ny = my - oy * s;
+            var nw = imw * s;
+            var nh = imh * s;
+            if (nw < cw && nh < ch) return this.resetZoom(event);
+            if (nw < cw) nx = (cw - nw) / 2;
+            if (nh < ch) ny = (ch - nh) / 2;
+            this.viewer.imagerect.width = nw;
+            this.viewer.imagerect.height = nh;
+            this.viewer.imagerect.x = nx;
+            this.viewer.imagerect.y = ny;
+            return true;
+        },
+        resetZoom: function (event) {
+            // zoom to fit size
+            var imw = this.sample.image.width;
+            var imh = this.sample.image.height;
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var s = Math.min(cw / imw, ch / imh);
+            var nw = imw * s;
+            var nh = imh * s;
+            var nx = (cw - nw) / 2;
+            var ny = (ch - nh) / 2;
+            this.viewer.imagerect.width = nw;
+            this.viewer.imagerect.height = nh;
+            this.viewer.imagerect.x = nx;
+            this.viewer.imagerect.y = ny;
+            return true;
+        },
+        frameZoom: function (event) {
+            // frame zoom in
+            var wrapperpos = this.viewer.el.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var fx = this.viewer.presspos.x;
+            var fy = this.viewer.presspos.y;
+            var fw = event.clientX - fx;
+            var fh = event.clientY - fy;
+            if (fw < 10 || fh < 10) return this.clickZoom(event);
+            fx -= wrapperx;
+            fy -= wrappery;
+            if (fw < 0) { fx = fx + fw; fw = -fw; }
+            if (fh < 0) { fy = fy + fh; fh = -fh; }
+            var s = Math.max(fw / cw, fh / ch);
+            var rfw = cw * s;
+            var rfh = ch * s;
+            fx -= (rfw - fw) / 2;
+            fy -= (rfh - fh) / 2;
+            var imw = this.viewer.imagerect.width;
+            var imh = this.viewer.imagerect.height;
+            var imx = this.viewer.imagerect.x;
+            var imy = this.viewer.imagerect.y;
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var ox = fx - imx;
+            var oy = fy - imy;
+            var nw = imw / s;
+            var nh = imh / s;
+            var nx = - ox / s;
+            var ny = - oy / s;
+            if (nw < cw && nh < ch) return this.resetZoom(event);
+            if (nw < cw) nx = (cw - nw) / 2;
+            if (nh < ch) ny = (ch - nh) / 2;
+            this.viewer.imagerect.width = nw;
+            this.viewer.imagerect.height = nh;
+            this.viewer.imagerect.x = nx;
+            this.viewer.imagerect.y = ny;
+            return true;
+        },
         viewerMarkBoxStyles: function (markitem) {
             var s = this.viewer.imagerect.width / this.sample.image.width;
             var imw = this.viewer.imagerect.width;
@@ -225,19 +374,73 @@ var vue = new Vue({
             var my = markitem.y * s + imy;
             var mw = markitem.width * s;
             var mh = markitem.height * s;
-            // console.log(this.viewer.imagerect.width, this.sample.image.width, s, markitem.x, mx);
             var colorscheme = {
                 "target": "#0066FF",
                 "mistake": "#FF0000",
+                "unknown": "#FF00FF",
                 "blank": "#FF9933"
             };
             if (!(markitem.type in colorscheme)) return { "display": "none" };
             return {
                 borderColor: colorscheme[markitem.type],
-                left: mx,
-                top: my,
-                width: mw,
-                height: mh
+                left: mx + "px",
+                top: my + "px",
+                width: mw + "px",
+                height: mh + "px"
+            };
+        },
+        hoverMark: function (event) {
+            // clicking zoom in/out
+            var s = this.viewer.imagerect.width / this.sample.image.width;
+            var wrapperpos = this.viewer.el.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var mx = event.clientX - wrapperx;
+            var my = event.clientY - wrappery;
+            var imw = this.viewer.imagerect.width;
+            var imh = this.viewer.imagerect.height;
+            var imx = this.viewer.imagerect.x;
+            var imy = this.viewer.imagerect.y;
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var ox = (mx - imx) / s;
+            var oy = (my - imy) / s;
+            for (var i = this.sample.marks.length - 1; i >= 0; i--) {
+                var markitem = this.sample.marks[i];
+                if ((ox >= markitem.x) && (ox < markitem.x + markitem.width) && (oy >= markitem.y) && (oy < markitem.y + markitem.height))
+                    return markitem;
+            }
+            return null;
+        },
+        cursorMark: function (event) {
+            // clicking zoom in/out
+            var s = this.viewer.imagerect.width / this.sample.image.width;
+            var wrapperpos = this.viewer.el.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var mx = event.clientX - wrapperx;
+            var my = event.clientY - wrappery;
+            var imw = this.viewer.imagerect.width;
+            var imh = this.viewer.imagerect.height;
+            var imx = this.viewer.imagerect.x;
+            var imy = this.viewer.imagerect.y;
+            var cw = this.viewer.el.width();
+            var ch = this.viewer.el.height();
+            var ox = (mx - imx) / s;
+            var oy = (my - imy) / s;
+            if (ox >= this.sample.image.width) return null;
+            if (oy >= this.sample.image.height) return null;
+            var ow = this.sample.marksize.width;
+            var oh = this.sample.marksize.height;
+            ox -= ow;
+            oy -= oh;
+            if (ox < 0) return null;
+            if (oy < 0) return null;
+            return {
+                x: ox,
+                y: oy,
+                width: ow,
+                height: oh
             };
         }
     },
@@ -256,7 +459,6 @@ var vue = new Vue({
         },
         viewerImgStyles: function () {
             var that = this;
-            console.log(this.viewer.imagerect.width, this.sample.image.width);
             return {
                 width: that.viewer.imagerect.width + "px",
                 height: that.viewer.imagerect.height + "px",
@@ -272,6 +474,42 @@ var vue = new Vue({
                 left: that.viewer.zoomframe.x + "px",
                 top: that.viewer.zoomframe.y + "px"
             };
+        },
+        viewerMarks: function () {
+            var that = this;
+            var ret = [];
+            for (var i = 0; i < that.sample.marks.length; i++) {
+                var markitem = that.sample.marks[i];
+                ret.push({
+                    index: i,
+                    data: markitem,
+                    styles: that.viewerMarkBoxStyles(markitem)
+                });
+            }
+            // console.log("compute viewerMarks");
+            // if (that.sample.activeMark.show) {
+            //     console.log("push activeMark");
+            //     ret.push({
+            //         index: i,
+            //         data: that.sample.activeMark,
+            //         styles: that.viewerMarkBoxStyles(that.sample.activeMark)
+            //     });
+            // }
+            return ret;
+        },
+        viewerActiveMark: function () {
+            if (this.sample.activeMark.show) {
+                return {
+                    show: true,
+                    data: this.sample.activeMark,
+                    highlight: this.viewer.pressed,
+                    styles: this.viewerMarkBoxStyles(this.sample.activeMark)
+                };
+            } else {
+                return {
+                    show: false
+                };
+            }
         }
     },
     created: function () {
@@ -283,164 +521,126 @@ var vue = new Vue({
         //     that.statistics.total = data.total;
         //     status_loading(false);
         // });
+        $(function () {
+            that.viewer.el = $('#image-wrapper');
+            that.viewer.img = $('#image');
+            if (that.sample.image.completed && that.viewer.img.completed) that.resetZoom();
+            $(".image-wrapper img").on('mousedown', function(event) {
+                event.preventDefault();
+            });
+            $(".image-wrapper").on('mousedown', function(event) {
+                that.viewer.pressed = true;
+                that.viewer.pressmoved = false;
+                that.viewer.presspos.x = event.clientX;
+                that.viewer.presspos.y = event.clientY;
+                that.viewer.imagepresspos.x = that.viewer.imagerect.x;
+                that.viewer.imagepresspos.y = that.viewer.imagerect.y;
+            });
+            $(".image-wrapper").on('mousemove', function(event) {
+                if (that.viewer.pressed) that.viewer.pressmoved = true;
+                if (that.viewer.mode == "pan") {
+                    if (that.viewer.pressed) {
+                        var d = {};
+                        d.x = event.clientX - that.viewer.presspos.x;
+                        d.y = event.clientY - that.viewer.presspos.y;
+                        that.viewer.imagerect.x = that.viewer.imagepresspos.x + d.x;
+                        that.viewer.imagerect.y = that.viewer.imagepresspos.y + d.y;
+                    }
+                } else if (that.viewer.mode == "zoomin") {
+                    if (that.viewer.pressed) {
+                        var wrapper = $("#image-wrapper");
+                        var wrapperpos = wrapper.offset();
+                        var wrapperx = wrapperpos.left - $(window).scrollLeft();
+                        var wrappery = wrapperpos.top - $(window).scrollTop();
+                        var fx = that.viewer.presspos.x;
+                        var fy = that.viewer.presspos.y;
+                        var fw = event.clientX - fx;
+                        var fh = event.clientY - fy;
+                        fx -= wrapperx;
+                        fy -= wrappery;
+                        if (fw < 0) { fx = fx + fw; fw = -fw; }
+                        if (fh < 0) { fy = fy + fh; fh = -fh; }
+                        that.viewer.zoomframe.x = fx;
+                        that.viewer.zoomframe.y = fy;
+                        that.viewer.zoomframe.width = fw;
+                        that.viewer.zoomframe.height = fh;
+                        that.viewer.zoomframe.show = true;
+                    }
+                } else if (that.viewer.mode == "mark") {
+                    if (["target", "mistake", "unknown"].indexOf(that.viewer.markmode) >= 0) {
+                        var markitem = that.hoverMark(event);
+                        if (markitem) {
+                            that.sample.activeMark.type = that.viewer.markmode;
+                            that.sample.activeMark.x = markitem.x;
+                            that.sample.activeMark.y = markitem.y;
+                            that.sample.activeMark.width = markitem.width;
+                            that.sample.activeMark.height = markitem.height;
+                            that.sample.activeMark.show = true;
+                        } else {
+                            that.sample.activeMark.show = false;
+                        }
+                    } else if (that.viewer.markmode == "blank") {
+                        var markitem = that.cursorMark(event);
+                        if (markitem) {
+                            that.sample.activeMark.type = that.viewer.markmode;
+                            that.sample.activeMark.x = markitem.x;
+                            that.sample.activeMark.y = markitem.y;
+                            that.sample.activeMark.width = markitem.width;
+                            that.sample.activeMark.height = markitem.height;
+                            that.sample.activeMark.show = true;
+                        } else {
+                            that.sample.activeMark.show = false;
+                        }
+                    }
+                }
+            });
+            $(".image-wrapper").on('mouseout', function(event) {
+                that.sample.activeMark.show = false;
+            });
+            $(document).on('mouseup', function(event) {
+                that.clearMouse();
+            });
+            var clickcount = 0;
+            var clicktimer = undefined;
+            $(".image-wrapper").on('mouseup', function(event) {
+                // ------------------------------
+                // remember the click for 800ms (to detect the continuesly clicking)
+                clickcount += 1;
+                if (clicktimer !== undefined) clearTimeout(clicktimer);
+                setTimeout(function () {
+                    clickcount = 0;
+                }, 500);
+                // ------------------------------
+                if (that.viewer.mode == "zoomout" && clickcount >= 3) {
+                    that.resetZoom(event);
+                } else if (that.viewer.mode == "zoomin" && that.viewer.pressmoved) {
+                    that.frameZoom(event);
+                } else if (that.viewer.mode == "zoomout" || that.viewer.mode == "zoomin") {
+                    that.clickZoom(event);
+                } else if (that.viewer.mode == "mark") {
+                    if (["target", "mistake", "unknown"].indexOf(that.viewer.markmode) >= 0) {
+                        var markitem = that.hoverMark(event);
+                        if (markitem) {
+                            markitem.type = that.viewer.markmode;
+                        }
+                    } else if (that.viewer.markmode == "blank") {
+                        var markitem = that.cursorMark(event);
+                        if (markitem) {
+                            markitem.type = that.viewer.markmode;
+                            that.sample.marks = [].concat(that.sample.marks, [markitem]);
+                        }
+                    }
+                }
+            });
+        });
+        this.sample.image.src = "/static/runtime/sample.jpg";
         status_loading(false);
     }
 });
+
 $(function () {
-    $(".image-wrapper img").on('mousedown', function(event) {
-        event.preventDefault();
-    });
-    $(".image-wrapper").on('mousedown', function(event) {
-        vue.viewer.pressed = true;
-        vue.viewer.pressmoved = false;
-        vue.viewer.presspos.x = event.clientX;
-        vue.viewer.presspos.y = event.clientY;
-        vue.viewer.imagepresspos.x = vue.viewer.imagerect.x;
-        vue.viewer.imagepresspos.y = vue.viewer.imagerect.y;
-    });
-    $(".image-wrapper").on('mousemove', function(event) {
-        if (vue.viewer.pressed) vue.viewer.pressmoved = true;
-        if (vue.viewer.mode == "pan") {
-            if (vue.viewer.pressed) {
-                var d = {};
-                d.x = event.clientX - vue.viewer.presspos.x;
-                d.y = event.clientY - vue.viewer.presspos.y;
-                vue.viewer.imagerect.x = vue.viewer.imagepresspos.x + d.x;
-                vue.viewer.imagerect.y = vue.viewer.imagepresspos.y + d.y;
-            }
-        } else if (vue.viewer.mode == "zoomin") {
-            if (vue.viewer.pressed) {
-                var wrapper = $("#image-wrapper");
-                var wrapperpos = wrapper.offset();
-                var wrapperx = wrapperpos.left - $(window).scrollLeft();
-                var wrappery = wrapperpos.top - $(window).scrollTop();
-                var fx = vue.viewer.presspos.x;
-                var fy = vue.viewer.presspos.y;
-                var fw = event.clientX - fx;
-                var fh = event.clientY - fy;
-                fx -= wrapperx;
-                fy -= wrappery;
-                if (fw < 0) { fx = fx + fw; fw = -fw; }
-                if (fh < 0) { fy = fy + fh; fh = -fh; }
-                vue.viewer.zoomframe.x = fx;
-                vue.viewer.zoomframe.y = fy;
-                vue.viewer.zoomframe.width = fw;
-                vue.viewer.zoomframe.height = fh;
-                vue.viewer.zoomframe.show = true;
-            }
-        }
-    });
-    $(document).on('mouseup', function(event) {
-        vue.clearMouse();
-    });
-    var clickcount = 0;
-    var clicktimer = undefined;
-    $(".image-wrapper").on('mouseup', function(event) {
-        // ------------------------------
-        // remember the click for 800ms (to detect the continuesly clicking)
-        clickcount += 1;
-        if (clicktimer !== undefined) clearTimeout(clicktimer);
-        setTimeout(function () {
-            clickcount = 0;
-        }, 500);
-        // ------------------------------
-        var wrapper = $("#image-wrapper");
-        function clickZoom(event) {
-            // clicking zoom in/out
-            var s = (vue.viewer.mode == "zoomout") ? 0.8 : 1.25;
-            var wrapperpos = wrapper.offset();
-            var wrapperx = wrapperpos.left - $(window).scrollLeft();
-            var wrappery = wrapperpos.top - $(window).scrollTop();
-            var mx = event.clientX - wrapperx;
-            var my = event.clientY - wrappery;
-            var imw = vue.viewer.imagerect.width;
-            var imh = vue.viewer.imagerect.height;
-            var imx = vue.viewer.imagerect.x;
-            var imy = vue.viewer.imagerect.y;
-            var cw = wrapper.width();
-            var ch = wrapper.height();
-            var ox = mx - imx;
-            var oy = my - imy;
-            var nx = mx - ox * s;
-            var ny = my - oy * s;
-            var nw = imw * s;
-            var nh = imh * s;
-            if (nw < cw && nh < ch) return resetZoom(event);
-            if (nw < cw) nx = (cw - nw) / 2;
-            if (nh < ch) ny = (ch - nh) / 2;
-            vue.viewer.imagerect.width = nw;
-            vue.viewer.imagerect.height = nh;
-            vue.viewer.imagerect.x = nx;
-            vue.viewer.imagerect.y = ny;
-            return true;
-        }
-        function resetZoom(event) {
-            // zoom to fit size
-            var imw = vue.sample.image.width;
-            var imh = vue.sample.image.height;
-            var cw = wrapper.width();
-            var ch = wrapper.height();
-            var s = Math.min(cw / imw, ch / imh);
-            var nw = imw * s;
-            var nh = imh * s;
-            var nx = (cw - nw) / 2;
-            var ny = (ch - nh) / 2;
-            vue.viewer.imagerect.width = nw;
-            vue.viewer.imagerect.height = nh;
-            vue.viewer.imagerect.x = nx;
-            vue.viewer.imagerect.y = ny;
-            return true;
-        }
-        function frameZoom(event) {
-            // frame zoom in
-            var wrapperpos = wrapper.offset();
-            var wrapperx = wrapperpos.left - $(window).scrollLeft();
-            var wrappery = wrapperpos.top - $(window).scrollTop();
-            var cw = wrapper.width();
-            var ch = wrapper.height();
-            var fx = vue.viewer.presspos.x;
-            var fy = vue.viewer.presspos.y;
-            var fw = event.clientX - fx;
-            var fh = event.clientY - fy;
-            if (fw < 10 || fh < 10) return clickZoom(event);
-            fx -= wrapperx;
-            fy -= wrappery;
-            if (fw < 0) { fx = fx + fw; fw = -fw; }
-            if (fh < 0) { fy = fy + fh; fh = -fh; }
-            var s = Math.max(fw / cw, fh / ch);
-            var rfw = cw * s;
-            var rfh = ch * s;
-            fx -= (rfw - fw) / 2;
-            fy -= (rfh - fh) / 2;
-            var imw = vue.viewer.imagerect.width;
-            var imh = vue.viewer.imagerect.height;
-            var imx = vue.viewer.imagerect.x;
-            var imy = vue.viewer.imagerect.y;
-            var cw = wrapper.width();
-            var ch = wrapper.height();
-            var ox = fx - imx;
-            var oy = fy - imy;
-            var nw = imw / s;
-            var nh = imh / s;
-            var nx = - ox / s;
-            var ny = - oy / s;
-            if (nw < cw && nh < ch) return resetZoom(event);
-            if (nw < cw) nx = (cw - nw) / 2;
-            if (nh < ch) ny = (ch - nh) / 2;
-            vue.viewer.imagerect.width = nw;
-            vue.viewer.imagerect.height = nh;
-            vue.viewer.imagerect.x = nx;
-            vue.viewer.imagerect.y = ny;
-            return true;
-        }
-        if (vue.viewer.mode == "zoomout" && clickcount >= 3) {
-            resetZoom(event);
-        } else if (vue.viewer.mode == "zoomin" && vue.viewer.pressmoved) {
-            frameZoom(event);
-        } else if (vue.viewer.mode == "zoomout" || vue.viewer.mode == "zoomin") {
-            clickZoom(event);
-        }
-    });
+    $('[data-toggle="tooltip"]').tooltip()
 });
+
 </script>
 {% endblock %}
