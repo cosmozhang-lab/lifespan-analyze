@@ -84,6 +84,7 @@ Data Mark
 .image-wrapper .framebox.mark {
     border-width: 2px;
     border-color: #993333;
+    box-shadow: 0 0 5px -1px white;
 }
 </style>
 {% endblock %}
@@ -129,6 +130,7 @@ Data Mark
         <div id="image-wrapper" class="image-wrapper" v-bind:class="viewerClasses">
             <img id="image" v-bind:src="sample.image.src" v-bind:style="viewerImgStyles">
             <div class="framebox zoomin" v-show="viewer.zoomframe.show" v-bind:style="viewerZoomFrameStyles"></div>
+            <div v-for="markitem in sample.marks" class="framebox mark" v-bind:style="viewerMarkBoxStyles(markitem)"></div>
         </div>
     </div>
 </div>
@@ -147,7 +149,43 @@ var vue = new Vue({
         },
         sample: {
             title: "G7 / 2018-08-28 20",
-            image: (function (src) { var img = new Image(); img.src = src; return img })("/static/runtime/sample.jpg")
+            image: (function (src) { var img = new Image(); img.src = src; return img })("/static/runtime/sample.jpg"),
+            marks: [
+                { type: "target", x: 1652, y: 2013, width: 224, height: 120 },
+                { type: "target", x: 3557, y: 1525, width: 200, height: 128 },
+                { type: "target", x: 3757, y: 1485, width: 200, height: 128 },
+                { type: "target", x: 4741, y: 2005, width: 184, height: 192 },
+                { type: "target", x: 4341, y: 1932, width: 112, height: 160 },
+                { type: "target", x: 3637, y: 3549, width: 144, height: 176 },
+                { type: "target", x: 4477, y: 4885, width: 176, height: 176 },
+                { type: "target", x: 4341, y: 5445, width: 160, height: 136 },
+                { type: "target", x: 2109, y: 4333, width: 208, height: 104 },
+                { type: "target", x: 4653, y: 5573, width: 216, height: 112 },
+                { type: "target", x: 5397, y: 3557, width: 128, height: 184 },
+                { type: "target", x: 1444, y: 5101, width: 128, height: 160 },
+                { type: "mistake", x: 2645, y: 1117, width: 104, height: 120 },
+                { type: "mistake", x: 2765, y: 1181, width: 104, height: 120 },
+                { type: "mistake", x: 2733, y: 933, width: 88, height: 88 },
+                { type: "mistake", x: 3389, y: 1045, width: 168, height: 120 },
+                { type: "mistake", x: 2701, y: 2557, width: 96, height: 136 },
+                { type: "mistake", x: 3309, y: 3093, width: 128, height: 128 },
+                { type: "mistake", x: 4381, y: 3397, width: 120, height: 120 },
+                { type: "mistake", x: 4437, y: 5029, width: 104, height: 176 },
+                { type: "mistake", x: 908, y: 4141, width: 128, height: 104 },
+                { type: "mistake", x: 932, y: 4245, width: 136, height: 88 },
+                { type: "mistake", x: 1316, y: 2669, width: 80, height: 104 },
+                { type: "mistake", x: 1484, y: 2509, width: 80, height: 120 },
+                { type: "mistake", x: 1412, y: 2669, width: 104, height: 104 },
+                { type: "mistake", x: 1452, y: 2773, width: 104, height: 64 },
+                { type: "mistake", x: 1572, y: 2653, width: 72, height: 56 },
+                { type: "mistake", x: 1596, y: 2733, width: 88, height: 56 },
+                { type: "mistake", x: 1300, y: 2901, width: 88, height: 80 },
+                { type: "mistake", x: 1332, y: 2829, width: 72, height: 64 },
+                { type: "mistake", x: 2005, y: 3421, width: 96, height: 104 },
+                { type: "mistake", x: 4533, y: 4893, width: 104, height: 112 },
+                { type: "mistake", x: 3013, y: 3885, width: 96, height: 96 },
+                { type: "mistake", x: 2301, y: 5965, width: 112, height: 120 }
+            ]
         },
         viewer: {
             mode: null,
@@ -176,6 +214,31 @@ var vue = new Vue({
                 this.viewer.mode = modename;
                 this.clearMouse();
             }
+        },
+        viewerMarkBoxStyles: function (markitem) {
+            var s = this.viewer.imagerect.width / this.sample.image.width;
+            var imw = this.viewer.imagerect.width;
+            var imh = this.viewer.imagerect.height;
+            var imx = this.viewer.imagerect.x;
+            var imy = this.viewer.imagerect.y;
+            var mx = markitem.x * s + imx;
+            var my = markitem.y * s + imy;
+            var mw = markitem.width * s;
+            var mh = markitem.height * s;
+            // console.log(this.viewer.imagerect.width, this.sample.image.width, s, markitem.x, mx);
+            var colorscheme = {
+                "target": "#0066FF",
+                "mistake": "#FF0000",
+                "blank": "#FF9933"
+            };
+            if (!(markitem.type in colorscheme)) return { "display": "none" };
+            return {
+                borderColor: colorscheme[markitem.type],
+                left: mx,
+                top: my,
+                width: mw,
+                height: mh
+            };
         }
     },
     computed: {
@@ -193,6 +256,7 @@ var vue = new Vue({
         },
         viewerImgStyles: function () {
             var that = this;
+            console.log(this.viewer.imagerect.width, this.sample.image.width);
             return {
                 width: that.viewer.imagerect.width + "px",
                 height: that.viewer.imagerect.height + "px",
