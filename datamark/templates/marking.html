@@ -38,10 +38,10 @@ Data Mark
     background-color: #999999;
 }
 .mode-bar .mode-item.active {
-    background-color: #00ff33;
+    background-color: #00cc33;
 }
 .mode-bar .mode-item.active:hover {
-    background-color: #33ff66;
+    background-color: #33dd66;
 }
 
 .image-wrapper {
@@ -52,9 +52,11 @@ Data Mark
     position: relative;
     user-select: none;
 }
-.image-wrapper.zoomout
+.image-wrapper.zoomout {
+    cursor: url("/static/images/icon-zoom-out.png"), default;
+}
 .image-wrapper.zoomin {
-    cursor: default;
+    cursor: url("/static/images/icon-zoom-in.png"), default;
 }
 .image-wrapper.pan {
     cursor: move;
@@ -75,8 +77,9 @@ Data Mark
 }
 .image-wrapper .framebox.zoomin {
     border-width: 1px;
-    border-color: #999;
+    border-color: black;
     border-style: dashed;
+    box-shadow: 0 0 1px 0 white;
 }
 .image-wrapper .framebox.mark {
     border-width: 2px;
@@ -114,16 +117,18 @@ Data Mark
     </div>
     <div class="col-sm-6 mode-bar-wrapper">
         <div class="mode-bar">
-            <span class="mode-item">Zooming (Z)</span>
-            <span class="mode-item">Marking (X)</span>
+            <span class="mode-item" v-on:click="toggleMode('zoomin')"  v-bind:class="{ active: (viewer.mode == 'zoomin') }"  ><i class="fa fa-search-plus"></i></span>
+            <span class="mode-item" v-on:click="toggleMode('zoomout')" v-bind:class="{ active: (viewer.mode == 'zoomout') }" ><i class="fa fa-search-minus"></i></span>
+            <span class="mode-item" v-on:click="toggleMode('pan')"     v-bind:class="{ active: (viewer.mode == 'pan') }"     ><i class="fa fa-arrows-alt"></i></span>
+            <span class="mode-item" v-on:click="toggleMode('mark')"    v-bind:class="{ active: (viewer.mode == 'mark') }"    ><i class="fa fa-marker"></i></span>
         </div>
     </div>
 </div>
 <div class="row" style="margin-top: 20px">
     <div class="col-sm-12">
-        <div class="image-wrapper" v-bind:class="viewerClasses">
-            <img v-bind:src="sample.image.src" v-bind:style="viewerImgStyles">
-            <div class=""></div>
+        <div id="image-wrapper" class="image-wrapper" v-bind:class="viewerClasses">
+            <img id="image" v-bind:src="sample.image.src" v-bind:style="viewerImgStyles">
+            <div class="framebox zoomin" v-show="viewer.zoomframe.show" v-bind:style="viewerZoomFrameStyles"></div>
         </div>
     </div>
 </div>
@@ -145,17 +150,32 @@ var vue = new Vue({
             image: (function (src) { var img = new Image(); img.src = src; return img })("/static/runtime/sample.jpg")
         },
         viewer: {
-            mode: "zoomout",
+            mode: null,
             pressed: false,
             pressmoved: false,
             presspos: { x: 0, y: 0 },
-            imagepos: { x: 0, y: 0 },
-            imagepresspos: { x: 0, y: 0 }
+            imagerect: { x: 0, y: 0, width: 0, height: 0 },
+            imagepresspos: { x: 0, y: 0 },
+            zoomframe: { show: false, x: 0, y: 0, width: 0, height: 0 }
         }
     },
     methods: {
         percent: function (val, total) {
             return val / total * 100 + "%";
+        },
+        clearMouse: function () {
+            this.viewer.pressed = false;
+            this.viewer.pressmoved = false;
+            this.viewer.zoomframe.show = false;
+        },
+        toggleMode: function (modename) {
+            if (this.viewer.mode == modename) {
+                this.viewer.mode = null;
+                this.clearMouse();
+            } else {
+                this.viewer.mode = modename;
+                this.clearMouse();
+            }
         }
     },
     computed: {
@@ -165,7 +185,7 @@ var vue = new Vue({
                 zoomout: that.viewer.mode == "zoomout",
                 zoomin: that.viewer.mode == "zoomin",
                 pan: that.viewer.mode == "pan",
-                marking: that.viewer.mode == "marking",
+                marking: that.viewer.mode == "mark",
                 pressed: that.viewer.pressed,
                 mark_select: true,
                 mark_place: false
@@ -174,9 +194,20 @@ var vue = new Vue({
         viewerImgStyles: function () {
             var that = this;
             return {
-                left: that.viewer.imagepos.x + "px",
-                top: that.viewer.imagepos.y + "px"
-            }
+                width: that.viewer.imagerect.width + "px",
+                height: that.viewer.imagerect.height + "px",
+                left: that.viewer.imagerect.x + "px",
+                top: that.viewer.imagerect.y + "px"
+            };
+        },
+        viewerZoomFrameStyles: function () {
+            var that = this;
+            return {
+                width: that.viewer.zoomframe.width + "px",
+                height: that.viewer.zoomframe.height + "px",
+                left: that.viewer.zoomframe.x + "px",
+                top: that.viewer.zoomframe.y + "px"
+            };
         }
     },
     created: function () {
@@ -200,8 +231,8 @@ $(function () {
         vue.viewer.pressmoved = false;
         vue.viewer.presspos.x = event.clientX;
         vue.viewer.presspos.y = event.clientY;
-        vue.viewer.imagepresspos.x = vue.viewer.imagepos.x;
-        vue.viewer.imagepresspos.y = vue.viewer.imagepos.y;
+        vue.viewer.imagepresspos.x = vue.viewer.imagerect.x;
+        vue.viewer.imagepresspos.y = vue.viewer.imagerect.y;
     });
     $(".image-wrapper").on('mousemove', function(event) {
         if (vue.viewer.pressed) vue.viewer.pressmoved = true;
@@ -210,15 +241,140 @@ $(function () {
                 var d = {};
                 d.x = event.clientX - vue.viewer.presspos.x;
                 d.y = event.clientY - vue.viewer.presspos.y;
-                vue.viewer.imagepos.x = vue.viewer.imagepresspos.x + d.x;
-                vue.viewer.imagepos.y = vue.viewer.imagepresspos.y + d.y;
+                vue.viewer.imagerect.x = vue.viewer.imagepresspos.x + d.x;
+                vue.viewer.imagerect.y = vue.viewer.imagepresspos.y + d.y;
             }
         } else if (vue.viewer.mode == "zoomin") {
+            if (vue.viewer.pressed) {
+                var wrapper = $("#image-wrapper");
+                var wrapperpos = wrapper.offset();
+                var wrapperx = wrapperpos.left - $(window).scrollLeft();
+                var wrappery = wrapperpos.top - $(window).scrollTop();
+                var fx = vue.viewer.presspos.x;
+                var fy = vue.viewer.presspos.y;
+                var fw = event.clientX - fx;
+                var fh = event.clientY - fy;
+                fx -= wrapperx;
+                fy -= wrappery;
+                if (fw < 0) { fx = fx + fw; fw = -fw; }
+                if (fh < 0) { fy = fy + fh; fh = -fh; }
+                vue.viewer.zoomframe.x = fx;
+                vue.viewer.zoomframe.y = fy;
+                vue.viewer.zoomframe.width = fw;
+                vue.viewer.zoomframe.height = fh;
+                vue.viewer.zoomframe.show = true;
+            }
         }
     });
+    $(document).on('mouseup', function(event) {
+        vue.clearMouse();
+    });
+    var clickcount = 0;
+    var clicktimer = undefined;
     $(".image-wrapper").on('mouseup', function(event) {
-        vue.viewer.pressed = false;
-        if (vue.viewer.mode == "pan") {
+        // ------------------------------
+        // remember the click for 800ms (to detect the continuesly clicking)
+        clickcount += 1;
+        if (clicktimer !== undefined) clearTimeout(clicktimer);
+        setTimeout(function () {
+            clickcount = 0;
+        }, 500);
+        // ------------------------------
+        var wrapper = $("#image-wrapper");
+        function clickZoom(event) {
+            // clicking zoom in/out
+            var s = (vue.viewer.mode == "zoomout") ? 0.8 : 1.25;
+            var wrapperpos = wrapper.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var mx = event.clientX - wrapperx;
+            var my = event.clientY - wrappery;
+            var imw = vue.viewer.imagerect.width;
+            var imh = vue.viewer.imagerect.height;
+            var imx = vue.viewer.imagerect.x;
+            var imy = vue.viewer.imagerect.y;
+            var cw = wrapper.width();
+            var ch = wrapper.height();
+            var ox = mx - imx;
+            var oy = my - imy;
+            var nx = mx - ox * s;
+            var ny = my - oy * s;
+            var nw = imw * s;
+            var nh = imh * s;
+            if (nw < cw && nh < ch) return resetZoom(event);
+            if (nw < cw) nx = (cw - nw) / 2;
+            if (nh < ch) ny = (ch - nh) / 2;
+            vue.viewer.imagerect.width = nw;
+            vue.viewer.imagerect.height = nh;
+            vue.viewer.imagerect.x = nx;
+            vue.viewer.imagerect.y = ny;
+            return true;
+        }
+        function resetZoom(event) {
+            // zoom to fit size
+            var imw = vue.sample.image.width;
+            var imh = vue.sample.image.height;
+            var cw = wrapper.width();
+            var ch = wrapper.height();
+            var s = Math.min(cw / imw, ch / imh);
+            var nw = imw * s;
+            var nh = imh * s;
+            var nx = (cw - nw) / 2;
+            var ny = (ch - nh) / 2;
+            vue.viewer.imagerect.width = nw;
+            vue.viewer.imagerect.height = nh;
+            vue.viewer.imagerect.x = nx;
+            vue.viewer.imagerect.y = ny;
+            return true;
+        }
+        function frameZoom(event) {
+            // frame zoom in
+            var wrapperpos = wrapper.offset();
+            var wrapperx = wrapperpos.left - $(window).scrollLeft();
+            var wrappery = wrapperpos.top - $(window).scrollTop();
+            var cw = wrapper.width();
+            var ch = wrapper.height();
+            var fx = vue.viewer.presspos.x;
+            var fy = vue.viewer.presspos.y;
+            var fw = event.clientX - fx;
+            var fh = event.clientY - fy;
+            if (fw < 10 || fh < 10) return clickZoom(event);
+            fx -= wrapperx;
+            fy -= wrappery;
+            if (fw < 0) { fx = fx + fw; fw = -fw; }
+            if (fh < 0) { fy = fy + fh; fh = -fh; }
+            var s = Math.max(fw / cw, fh / ch);
+            var rfw = cw * s;
+            var rfh = ch * s;
+            fx -= (rfw - fw) / 2;
+            fy -= (rfh - fh) / 2;
+            var imw = vue.viewer.imagerect.width;
+            var imh = vue.viewer.imagerect.height;
+            var imx = vue.viewer.imagerect.x;
+            var imy = vue.viewer.imagerect.y;
+            var cw = wrapper.width();
+            var ch = wrapper.height();
+            var ox = fx - imx;
+            var oy = fy - imy;
+            var nw = imw / s;
+            var nh = imh / s;
+            var nx = - ox / s;
+            var ny = - oy / s;
+            if (nw < cw && nh < ch) return resetZoom(event);
+            if (nw < cw) nx = (cw - nw) / 2;
+            if (nh < ch) ny = (ch - nh) / 2;
+            vue.viewer.imagerect.width = nw;
+            vue.viewer.imagerect.height = nh;
+            vue.viewer.imagerect.x = nx;
+            vue.viewer.imagerect.y = ny;
+            return true;
+        }
+        if (vue.viewer.mode == "zoomout" && clickcount >= 3) {
+            resetZoom(event);
+        } else if (vue.viewer.mode == "zoomin" && vue.viewer.pressmoved) {
+            frameZoom(event);
+        } else if (vue.viewer.mode == "zoomout" || vue.viewer.mode == "zoomin") {
+            clickZoom(event);
         }
     });
 });
