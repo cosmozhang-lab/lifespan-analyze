@@ -14,3 +14,33 @@ def parse_datetime(init):
 
 def stringify_datetime(datetime_item):
     return datetime_item.strftime(datetime_format)
+
+class RegionType:
+    UNKNOWN = None
+    TARGET = None
+    MISTAKE = None
+    BLANK = None
+    _CONSTANTS = []
+    def __init__(self, num=None, name=None):
+        if num is None or name is None:
+            fetched = RegionType.get(num=num, name=name)
+            if fetched is None:
+                raise ValueError("invalid num and name")
+            num = fetched.num
+            name = fetched.name
+        self.num = num
+        self.name = name
+    def get(num=None, name=None):
+        if num is None and name is None:
+            raise ValueError("must specify a num or a name")
+        for item in RegionType._CONSTANTS:
+            if not num is None and item.num != num: continue
+            if not name is None and item.name != name: continue
+            return item
+        return None
+
+RegionType.UNKNOWN = RegionType(0, "unknown")
+RegionType.TARGET  = RegionType(1, "target")
+RegionType.MISTAKE = RegionType(2, "mistake")
+RegionType.BLANK   = RegionType(3, "blank")
+RegionType._CONSTANTS = [RegionType.UNKNOWN, RegionType.TARGET, RegionType.MISTAKE, RegionType.BLANK]

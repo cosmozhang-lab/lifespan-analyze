@@ -171,6 +171,12 @@ Data Mark
         </div>
     </div>
 </div>
+<div class="row" style="margin-top: 20px">
+    <div class="col-sm-12" style="text-align: right;">
+        <a href="javascript:;" class="btn btn-default" v-on:click="resetMarks">Reset</a>
+        <a href="javascript:;" class="btn btn-primary" v-on:click="submitImage">Submit</a>
+    </div>
+</div>
 {% endverbatim %}
 {% endblock %}
 
@@ -185,7 +191,8 @@ var vue = new Vue({
             total: 0
         },
         sample: {
-            title: "G7 / 2018-08-28 20",
+            sampleid: null,
+            title: "",
             image: (function () {
                 var img = new Image();
                 img.onload = function () {
@@ -193,44 +200,27 @@ var vue = new Vue({
                 };
                 return img;
             })(),
-            marks: [
-                { type: "target", x: 1652, y: 2013, width: 224, height: 120 },
-                { type: "target", x: 3557, y: 1525, width: 200, height: 128 },
-                { type: "target", x: 3757, y: 1485, width: 200, height: 128 },
-                { type: "target", x: 4741, y: 2005, width: 184, height: 192 },
-                { type: "target", x: 4341, y: 1932, width: 112, height: 160 },
-                { type: "target", x: 3637, y: 3549, width: 144, height: 176 },
-                { type: "target", x: 4477, y: 4885, width: 176, height: 176 },
-                { type: "target", x: 4341, y: 5445, width: 160, height: 136 },
-                { type: "target", x: 2109, y: 4333, width: 208, height: 104 },
-                { type: "target", x: 4653, y: 5573, width: 216, height: 112 },
-                { type: "unknown", x: 5397, y: 3557, width: 128, height: 184 },
-                { type: "unknown", x: 1444, y: 5101, width: 128, height: 160 },
-                { type: "unknown", x: 2645, y: 1117, width: 104, height: 120 },
-                { type: "unknown", x: 2765, y: 1181, width: 104, height: 120 },
-                { type: "unknown", x: 2733, y: 933, width: 88, height: 88 },
-                { type: "unknown", x: 3389, y: 1045, width: 168, height: 120 },
-                { type: "unknown", x: 2701, y: 2557, width: 96, height: 136 },
-                { type: "unknown", x: 3309, y: 3093, width: 128, height: 128 },
-                { type: "unknown", x: 4381, y: 3397, width: 120, height: 120 },
-                { type: "unknown", x: 4437, y: 5029, width: 104, height: 176 },
-                { type: "unknown", x: 908, y: 4141, width: 128, height: 104 },
-                { type: "unknown", x: 932, y: 4245, width: 136, height: 88 },
-                { type: "unknown", x: 1316, y: 2669, width: 80, height: 104 },
-                { type: "unknown", x: 1484, y: 2509, width: 80, height: 120 },
-                { type: "unknown", x: 1412, y: 2669, width: 104, height: 104 },
-                { type: "unknown", x: 1452, y: 2773, width: 104, height: 64 },
-                { type: "mistake", x: 1572, y: 2653, width: 72, height: 56 },
-                { type: "mistake", x: 1596, y: 2733, width: 88, height: 56 },
-                { type: "mistake", x: 1300, y: 2901, width: 88, height: 80 },
-                { type: "mistake", x: 1332, y: 2829, width: 72, height: 64 },
-                { type: "mistake", x: 2005, y: 3421, width: 96, height: 104 },
-                { type: "mistake", x: 4533, y: 4893, width: 104, height: 112 },
-                { type: "mistake", x: 3013, y: 3885, width: 96, height: 96 },
-                { type: "mistake", x: 2301, y: 5965, width: 112, height: 120 }
-            ],
+            marks: [],
+            originmarks: null,
             activeMark: { type: null, show: false, x: 0, y: 0, width: 0, height: 0 },
-            marksize: { width: 256, height: 256 }
+            marksize: { width: 0, height: 0 }
+        },
+        preloadsample: {
+            valid: false,
+            invalid_reason: false,
+            loading: false,
+            sampleid: null,
+            title: "",
+            image: (function () {
+                var img = new Image();
+                img.onload = function () {
+                    vue.preloadsample.loading = false;
+                };
+                return img;
+            })(),
+            marks: [],
+            originmarks: null,
+            marksize: { width: 0, height: 0 }
         },
         viewer: {
             el: null,
@@ -274,7 +264,25 @@ var vue = new Vue({
             }
         },
         onViewerImageLoad: function() {
-            this.resetZoom();
+            var that = this;
+            that.resetZoom();
+            that.preloadsample.valid = false;
+            that.preloadsample.loading = true;
+            $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
+                if (data.success) {
+                    data = data.data;
+                    that.preloadsample.sampleid = data.sampleid;
+                    that.preloadsample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                    that.preloadsample.marks = data.marks;
+                    that.preloadsample.originmarks = JSON.stringify(data.marks);
+                    that.preloadsample.image.src = data.imgsrc;
+                    that.preloadsample.marksize = data.marksize;
+                } else {
+                    that.preloadsample.valid = false;
+                    that.preloadsample.invalid_reason = data.reason;
+                    that.preloadsample.loading = false;
+                }
+            });
         },
         clickZoom: function (event) {
             // clicking zoom in/out
@@ -442,6 +450,57 @@ var vue = new Vue({
                 width: ow,
                 height: oh
             };
+        },
+        submitImage: function () {
+            var that = this;
+            var submitdata = {
+                sampleid: that.sample.sampleid,
+                marks: that.sample.marks.map(function (item) {
+                    return {
+                        "type": item.type,
+                        "x": item.x,
+                        "y": item.y,
+                        "width": item.width,
+                        "height": item.height
+                    };
+                })
+            };
+            status_loading(true);
+            function test_and_submit() {
+                if (that.preloadsample.loading) {
+                    setTimeout(test_and_submit, 100);
+                } else {
+                    $.ajax({
+                        url: '/api/marking/complete_sample',
+                        type: 'POST',
+                        data: JSON.stringify(submitdata),
+                    })
+                    .done(function() {
+                        if (that.preloadsample.valid) {
+                            that.sample.sampleid    = that.preloadsample.sampleid;
+                            that.sample.title       = that.preloadsample.title;
+                            that.sample.marks       = that.preloadsample.marks;
+                            that.sample.originmarks = that.preloadsample.originmarks;
+                            that.sample.image.src   = that.preloadsample.image.src;
+                            that.sample.marksize    = that.preloadsample.marksize;
+                            that.sample.activeMark.show = false;
+                        } else {
+                            that.sample.title = "";
+                            that.sample.marks = [];
+                            that.sample.originmarks = "[]";
+                            that.sample.image.src = "";
+                            that.viewer.imgsrc = "";
+                            that.sample.activeMark.show = false;
+                            messagebox("Marking", "Cannot load new sample. Because: " + that.preloadsample.invalid_reason);
+                        }
+                        status_loading(true);
+                    });
+                }
+            }
+            test_and_submit();
+        },
+        resetMarks: function () {
+            this.sample.marks = JSON.parse(this.sample.originmarks)
         }
     },
     computed: {
@@ -486,15 +545,6 @@ var vue = new Vue({
                     styles: that.viewerMarkBoxStyles(markitem)
                 });
             }
-            // console.log("compute viewerMarks");
-            // if (that.sample.activeMark.show) {
-            //     console.log("push activeMark");
-            //     ret.push({
-            //         index: i,
-            //         data: that.sample.activeMark,
-            //         styles: that.viewerMarkBoxStyles(that.sample.activeMark)
-            //     });
-            // }
             return ret;
         },
         viewerActiveMark: function () {
@@ -515,12 +565,6 @@ var vue = new Vue({
     created: function () {
         var that = this;
         this.setname = window.location.query.setname;
-        // $.get('/api/marking/statistics?setname=' + this.setname, function(data) {
-        //     data = data.data;
-        //     that.statistics.marked = data.marked;
-        //     that.statistics.total = data.total;
-        //     status_loading(false);
-        // });
         $(function () {
             that.viewer.el = $('#image-wrapper');
             that.viewer.img = $('#image');
@@ -633,13 +677,39 @@ var vue = new Vue({
                 }
             });
         });
-        this.sample.image.src = "/static/runtime/sample.jpg";
-        status_loading(false);
+        // this.sample.image.src = "/static/runtime/sample.jpg";
+        // status_loading(false);
+        $.get('/api/marking/statistics?setname=' + that.setname, function(data) {
+            data = data.data;
+            that.statistics.marked = data.marked;
+            that.statistics.total = data.total;
+            $.ajax({
+                url: '/api/marking/clear_pendings?setname=' + that.setname,
+                type: 'POST'
+            })
+            .done(function(data) {
+                $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
+                    if (data.success) {
+                        data = data.data;
+                        that.sample.sampleid = data.sampleid;
+                        that.sample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                        that.sample.marks = data.marks;
+                        that.sample.originmarks = JSON.stringify(data.marks);
+                        that.sample.activeMark.show = false;
+                        that.sample.image.src = data.imgsrc;
+                        that.sample.marksize = data.marksize;
+                    } else {
+                        messagebox("Marking", "Cannot load new sample. Because: " + data.reason);
+                    }
+                    status_loading(false);
+                });
+            });
+        });
     }
 });
 
 $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
+    $('[data-toggle="tooltip"]').tooltip();
 });
 
 </script>

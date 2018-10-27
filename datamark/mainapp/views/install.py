@@ -2,7 +2,6 @@
  
 #from django.http import HttpResponse
 from django.shortcuts import render
-from utils.detect import detect
 from django.http import JsonResponse
 from utils.files import FileFinder, FileItem
 from mainapp.models import Dataset, Sample

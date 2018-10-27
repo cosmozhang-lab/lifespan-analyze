@@ -14,6 +14,7 @@ class Sample(models.Model):
     rootdir = models.CharField(max_length=256)
     subdir = models.CharField(max_length=256)
     filename = models.CharField(max_length=256)
+    datapath = models.CharField(max_length=1024)
     STATUS_UNMARKED = 0
     STATUS_PENDING = 1
     STATUS_MARKED = 2
