@@ -207,7 +207,7 @@ var vue = new Vue({
         },
         preloadsample: {
             valid: false,
-            invalid_reason: false,
+            invalid_reason: null,
             loading: false,
             sampleid: null,
             title: "",
@@ -271,6 +271,7 @@ var vue = new Vue({
             $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
                 if (data.success) {
                     data = data.data;
+                    that.preloadsample.valid = true;
                     that.preloadsample.sampleid = data.sampleid;
                     that.preloadsample.title = data.plate + "   " + data.datetime.replace("T", " ");
                     that.preloadsample.marks = data.marks;
@@ -493,7 +494,8 @@ var vue = new Vue({
                             that.sample.activeMark.show = false;
                             messagebox("Marking", "Cannot load new sample. Because: " + that.preloadsample.invalid_reason);
                         }
-                        status_loading(true);
+                        that.updateStatistics();
+                        status_loading(false);
                     });
                 }
             }
@@ -501,6 +503,14 @@ var vue = new Vue({
         },
         resetMarks: function () {
             this.sample.marks = JSON.parse(this.sample.originmarks)
+        },
+        updateStatistics: function () {
+            var that = this;
+            $.get('/api/marking/statistics?setname=' + that.setname, function(data) {
+                data = data.data;
+                that.statistics.marked = data.marked;
+                that.statistics.total = data.total;
+            });
         }
     },
     computed: {

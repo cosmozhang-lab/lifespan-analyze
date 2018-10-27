@@ -86,7 +86,7 @@ def complete_sample(request):
     user = getuser(request)
     if user is None: return HttpResponse(403)
     sampledata = request.jsondata
-    sample = Sample.objects.get(sampledata["sampleid"])
+    sample = Sample.objects.get(id=sampledata["sampleid"])
     regions = [Rect(item["x"], item["y"], item["width"], item["height"]) for item in sampledata["marks"]]
     regiontypes = [RegionType.get(name=item["type"]) for item in sampledata["marks"]]
     markedsample = PreparedSample(regions=regions, regiontypes=regiontypes)
