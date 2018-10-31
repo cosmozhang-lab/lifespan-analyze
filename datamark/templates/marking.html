@@ -158,10 +158,10 @@ Data Mark
     <div class="col-sm-2">
         <div class="btn-group">
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span>{{ rank }}</span><span>&nbsp;</span><span class="caret"></span>
+                <span>{{ rank.name }}</span><span>&nbsp;</span><span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-                <li><a v-for="item in rankitems" href="javascript:;" v-on:click="changeRank(item)">{{ item }}</a></li>
+                <li><a v-for="item in rankitems" href="javascript:;" v-on:click="changeRank(item.value)">{{ item.name }}</a></li>
             </ul>
         </div>
     </div>
