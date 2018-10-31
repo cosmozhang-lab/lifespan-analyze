@@ -70,3 +70,18 @@ window.location.query = (function(url) {
     }
     return querydict;
 })(window.location.href);
+
+window.location.uri = (function(url) {
+    return /[^\?#]+/.exec(url);
+})(window.location.href);
+
+function make_url(uri, query) {
+    query = query || {};
+    var url = uri;
+    var qks = keys(query);
+    if (qks.length > 0) {
+        var querystr = "?" + qks.map(function(k) { return k + "=" + query[k]; });
+        url += querystr;
+    }
+    return url;
+}

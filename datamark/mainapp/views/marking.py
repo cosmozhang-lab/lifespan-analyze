@@ -6,11 +6,12 @@ from django.http import JsonResponse, HttpResponse
 from mainapp.models import Dataset, Sample
 from .login import getuser, authbar, redirectLogin
 from utils.common import parse_datetime, RegionType
-from utils.imgproc import prepare_sample, complete_sample as imgproc_complete_sample, PreparedSample, Rect
-import os, time
+from utils.imgproc import prepare_sample, review_sample, complete_sample as imgproc_complete_sample, PreparedSample, Rect
+import os, shutil, time
 from django.conf import settings
 from utils.configs import MarkConfig
 from utils.mainparams import marksize
+from urllib.parse import unquote as unescape
 
 def index(request):
     user = getuser(request)
@@ -35,32 +36,65 @@ def clear_pendings(request):
     if user is None: return HttpResponse(403)
     setname = request.GET["setname"]
     dataset = Dataset.objects.get(setname=setname)
-    Sample.objects.filter(dataset=dataset, marker=user, status=Sample.STATUS_PENDING).update(status=Sample.STATUS_UNMARKED)
+    samples = Sample.objects.filter(dataset=dataset, marker=user, status=Sample.STATUS_PENDING)
+    samples.update(status=Sample.STATUS_UNMARKED)
+    for item in samples:
+        outname = item.plate + "__" + item.subdir
+        imagepath = os.path.join(settings.BASE_DIR, "static/runtime/" + outname + ".jpg")
+        matpath = os.path.join(settings.BASE_DIR, "static/runtime/" + outname + ".mat")
+        if os.path.exists(imagepath): os.remove(imagepath)
+        if os.path.exists(matpath): os.remove(matpath)
     return JsonResponse({ "success": True })
 
 def fetch_sample(request):
     user = getuser(request)
     if user is None: return HttpResponse(403)
-    setname = request.GET["setname"]
-    dataset = Dataset.objects.get(setname=setname)
+    rank = request.GET["rank"] if "rank" in request.GET else "descending"
+    sampleid = int(request.GET["sampleid"]) if "sampleid" in request.GET else None
     # Fetch a sample record in the database
-    sample = Sample.objects.filter(dataset=dataset, status=Sample.STATUS_UNMARKED).order_by("seq", "plate").first()
+    if not sampleid is None:
+        sample = Sample.objects.get(id=sampleid)
+    elif rank == "ascending":
+        dataset = Dataset.objects.get(setname=request.GET["setname"])
+        sample = Sample.objects.filter(dataset=dataset, status=Sample.STATUS_UNMARKED).order_by("seq", "plate").first()
+    elif rank == "descending":
+        dataset = Dataset.objects.get(setname=request.GET["setname"])
+        sample = Sample.objects.filter(dataset=dataset, status=Sample.STATUS_UNMARKED).order_by("-seq", "plate").first()
+    elif rank == "random":
+        import random
+        dataset = Dataset.objects.get(setname=request.GET["setname"])
+        queryset = Sample.objects.filter(dataset=dataset, status=Sample.STATUS_UNMARKED)
+        total = queryset.count()
+        sample = queryset[int(random.random()*total)] if total > 0 else None
+    else:
+        raise ValueError("rank must be 'ascending', 'descending' or 'random'")
     if sample is None:
         return JsonResponse({
                 "success": False,
                 "reason": "all samples in this dataset has been marked"
             })
-    sample.status = Sample.STATUS_PENDING
-    sample.marker = user
-    sample.save()
-    # prepare the sample
-    filepath = os.path.join(sample.rootdir, sample.subdir, sample.filename)
-    outname = sample.plate + "__" + sample.subdir
-    outfullname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
-    timing0 = time.time()
-    props = prepare_sample(filepath, outfullname)
-    timing1 = time.time()
-    timing = timing1 - timing0
+    if sample.status == Sample.STATUS_MARKED:
+        markconfig = MarkConfig()
+        outdir = os.path.join(markconfig.outdir, sample.dataset.setname, sample.plate)
+        outname = sample.plate + "__" + sample.subdir
+        storedname = os.path.join(outdir, outname)
+        extractname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
+        timing0 = time.time()
+        props = review_sample(storedname, extractname)
+        timing1 = time.time()
+        timing = timing1 - timing0
+    else:
+        sample.status = Sample.STATUS_PENDING
+        sample.marker = user
+        sample.save()
+        # prepare the sample
+        filepath = os.path.join(sample.rootdir, sample.subdir, sample.filename)
+        outname = sample.plate + "__" + sample.subdir
+        outfullname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
+        timing0 = time.time()
+        props = prepare_sample(filepath, outfullname)
+        timing1 = time.time()
+        timing = timing1 - timing0
     # make the return data
     retdata = {}
     retdata["sampleid"] = sample.id
@@ -106,9 +140,44 @@ def complete_sample(request):
     sample.save()
     return JsonResponse({ "success": True })
 
+def search_sample(request):
+    user = getuser(request)
+    if user is None: return HttpResponse(403)
+    import re
+    limit = int(request.GET["n"]) if "n" in request.GET else 5
+    keywords = unescape(request.GET["q"]) if "q" in request.GET else ""
+    keywords = list(filter(lambda x: x, re.split(r"[^0-9a-zA-Z]", keywords)))
+    kwplate = None
+    kwdate = ""
+    kwdateconcaters = ["", "-", "-", "__", "-", "-"]
+    kwdatecnt = 0
+    for kw in keywords:
+        if re.match(r"[a-zA-Z]\d*", kw) is None:
+            kwdate += kwdateconcaters[kwdatecnt] + kw
+            kwdatecnt += 1
+        else:
+            kwplate = kw
+    queryset = Sample.objects.all()
+    if kwplate: queryset = queryset.filter(plate=kwplate)
+    if kwdate: queryset = queryset.filter(subdir__startswith=kwdate)
+    queryset = queryset[:limit]
+    def sample_tojson(sampleitem):
+        retdata = {}
+        retdata["sampleid"] = sampleitem.id
+        retdata["plate"] = sampleitem.plate
+        retdata["subdir"] = sampleitem.subdir
+        return retdata
+    retdata = list(map(sample_tojson, queryset))
+    return JsonResponse({
+            "success": True,
+            "data": retdata
+        })
+
+
 apis = [
     ("statistics", statistics),
     ("clear_pendings", clear_pendings),
     ("fetch_sample", fetch_sample),
-    ("complete_sample", complete_sample)
+    ("complete_sample", complete_sample),
+    ("search_sample", search_sample)
 ]

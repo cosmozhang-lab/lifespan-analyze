@@ -130,3 +130,12 @@ def complete_sample(sample, inname, outname):
     savemat(outname + ".mat", thedata)
     os.remove(inname + ".jpg")
     os.remove(inname + ".mat")
+
+def review_sample(storedname, outname):
+    loaddata = loadmat(storedname + ".mat")
+    img = loaddata["img"]
+    regions = [Rect(int(x[0]),int(x[1]),int(x[2]),int(x[3])) for x in loaddata["regions"]]
+    regiontypes = [RegionType.get(num=int(x)) for x in np.squeeze(loaddata["regiontypes"])]
+    cv2.imwrite(outname + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
+    savemat(outname + ".mat", loaddata)
+    return PreparedSample(regions=regions, regiontypes=regiontypes)

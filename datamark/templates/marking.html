@@ -99,6 +99,26 @@ Data Mark
 .image-wrapper .framebox.mark.highlight {
     box-shadow: 0 0 5px 3px white;
 }
+
+.searchbar {
+    position: relative;
+    height: 30px;
+    overflow: visible;
+}
+.searchbar .searchbox {
+    height: 100%;
+}
+.searchbar .searchlist {
+    position: absolute;
+    width: 100%;
+    z-index: 50;
+    top: 32px;
+    box-shadow: 0 0 10px -5px black;
+}
+.searchbar .searchlist .searchlist-item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
 </style>
 {% endblock %}
 
@@ -126,8 +146,24 @@ Data Mark
     </div>
 </div>
 <div class="row" style="margin-top: 20px">
-    <div class="col-sm-6">
-        <span>{{ sample.title }}</span>
+    <div class="col-sm-4">
+        <span class="searchbar-trigger" v-show="!searchbar.searching" v-on:click="showSearchbar">{{ sample.title }}</span>
+        <div class="searchbar" v-show="searchbar.searching">
+            <input type="text" class="form-control searchbox" id="searchbox" placeholder="e.g. G4 2018-09-16 13:50:12" v-model="searchbar.string" v-on:keyup="doSearch">
+            <div class="list-group searchlist" v-show="searchbar.result">
+                <a v-for="item in searchbar.result" class="list-group-item searchlist-item" v-on:click.stop="loadSample(item.sampleid, $event)" href="javascript:;">{{ item.title }}</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-2">
+        <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span>{{ rank }}</span><span>&nbsp;</span><span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a v-for="item in rankitems" href="javascript:;" v-on:click="changeRank(item)">{{ item }}</a></li>
+            </ul>
+        </div>
     </div>
     <div class="col-sm-6 mode-bar-wrapper">
         <div class="mode-bar">
@@ -190,6 +226,19 @@ var vue = new Vue({
             marked: 0,
             total: 0
         },
+        searchbar: {
+            searching: false,
+            string: "",
+            result: [],
+            timer: undefined,
+            seq: 0
+        },
+        rankitems: [
+            { name: "Ascending",  value: "ascending" },
+            { name: "Descending", value: "descending"},
+            { name: "Random",     value: "random"}
+        ],
+        rank: null,
         sample: {
             sampleid: null,
             title: "",
@@ -205,6 +254,7 @@ var vue = new Vue({
             activeMark: { type: null, show: false, x: 0, y: 0, width: 0, height: 0 },
             marksize: { width: 0, height: 0 }
         },
+        preload: true,
         preloadsample: {
             valid: false,
             invalid_reason: null,
@@ -266,24 +316,26 @@ var vue = new Vue({
         onViewerImageLoad: function() {
             var that = this;
             that.resetZoom();
-            that.preloadsample.valid = false;
-            that.preloadsample.loading = true;
-            $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
-                if (data.success) {
-                    data = data.data;
-                    that.preloadsample.valid = true;
-                    that.preloadsample.sampleid = data.sampleid;
-                    that.preloadsample.title = data.plate + "   " + data.datetime.replace("T", " ");
-                    that.preloadsample.marks = data.marks;
-                    that.preloadsample.originmarks = JSON.stringify(data.marks);
-                    that.preloadsample.image.src = data.imgsrc;
-                    that.preloadsample.marksize = data.marksize;
-                } else {
-                    that.preloadsample.valid = false;
-                    that.preloadsample.invalid_reason = data.reason;
-                    that.preloadsample.loading = false;
-                }
-            });
+            if (that.preload) {
+                that.preloadsample.valid = false;
+                that.preloadsample.loading = true;
+                $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
+                    if (data.success) {
+                        data = data.data;
+                        that.preloadsample.valid = true;
+                        that.preloadsample.sampleid = data.sampleid;
+                        that.preloadsample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                        that.preloadsample.marks = data.marks;
+                        that.preloadsample.originmarks = JSON.stringify(data.marks);
+                        that.preloadsample.image.src = data.imgsrc;
+                        that.preloadsample.marksize = data.marksize;
+                    } else {
+                        that.preloadsample.valid = false;
+                        that.preloadsample.invalid_reason = data.reason;
+                        that.preloadsample.loading = false;
+                    }
+                });
+            }
         },
         clickZoom: function (event) {
             // clicking zoom in/out
@@ -477,6 +529,7 @@ var vue = new Vue({
                         data: JSON.stringify(submitdata),
                     })
                     .done(function() {
+                        that.preload = true;
                         if (that.preloadsample.valid) {
                             that.sample.sampleid    = that.preloadsample.sampleid;
                             that.sample.title       = that.preloadsample.title;
@@ -511,6 +564,68 @@ var vue = new Vue({
                 that.statistics.marked = data.marked;
                 that.statistics.total = data.total;
             });
+        },
+        showSearchbar: function () {
+            this.searchbar.string = "";
+            this.searchbar.result = [];
+            this.searchbar.searching = true;
+            setTimeout( function() {$("#searchbox").focus();}, 10);
+        },
+        hideSearchbar: function () {
+            this.searchbar.searching = false;
+        },
+        doSearch: function () {
+            var that = this;
+            if (that.searchbar.timer !== undefined) {
+                clearTimeout(that.searchbar.timer);
+                that.searchbar.timer = undefined;
+            }
+            var searchstring = that.searchbar.string.trim();
+            if (searchstring) {
+                that.searchbar.timer = setTimeout(function() {
+                    that.searchbar.timer = undefined;
+                    var url = '/api/marking/search_sample?q=' + escape(searchstring);
+                    $.get(url, function(data) {
+                        var nowsearchstring = that.searchbar.string.trim();
+                        if (nowsearchstring != searchstring) return;
+                        data = data.data;
+                        that.searchbar.result = data.map(function(item) {
+                            return {
+                                sampleid: item.sampleid,
+                                title: item.plate + " " + item.subdir,
+                                href: "/marking?sampleid="
+                            };
+                        });
+                    });
+                }, 300);
+            } else {
+                that.searchbar.result = [];
+            }
+        },
+        loadSample: function (sampleid, event) {
+            var that = this;
+            that.hideSearchbar();
+            status_loading(true);
+            $.get('/api/marking/fetch_sample?sampleid=' + sampleid, function(data) {
+                if (data.success) {
+                    data = data.data;
+                    that.preload = false;
+                    that.sample.sampleid = data.sampleid;
+                    that.sample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                    that.sample.marks = data.marks;
+                    that.sample.originmarks = JSON.stringify(data.marks);
+                    that.sample.activeMark.show = false;
+                    that.sample.image.src = data.imgsrc;
+                    that.sample.marksize = data.marksize;
+                } else {
+                    messagebox("Marking", "Cannot load this sample. Because: " + data.reason);
+                }
+                status_loading(false);
+            });
+        },
+        changeRank: function (rankvalue) {
+            if (rankvalue == this.rank) return;
+            window.location.href = make_url(window.location.uri, $.extend({}, window.location.query, { rank: rankvalue }));
         }
     },
     computed: {
@@ -685,6 +800,26 @@ var vue = new Vue({
                         }
                     }
                 }
+            });
+            (function () {
+                var wrapperEl = $("#image-wrapper");
+                var wrapperW = parseInt(wrapperEl.width());
+                var wrapperH = parseInt(wrapperEl.height());
+                setInterval(function () {
+                    var documentH = parseInt($("body").height()) + 20;
+                    var windowH = parseInt($(window).height());
+                    if (windowH != documentH) wrapperEl.height(wrapperEl.height() + windowH - documentH);
+                    var newWrapperW = parseInt(wrapperEl.width());
+                    var newWrapperH = parseInt(wrapperEl.height());
+                    if (newWrapperH != wrapperH || newWrapperW != wrapperW) {
+                        vue.resetZoom();
+                        wrapperH = newWrapperH;
+                        wrapperW = newWrapperW;
+                    }
+                }, 100);
+            })();
+            $(document).on('click', function(event) {
+                if ($(event.target).closest('.searchbox,.searchbar-trigger').length == 0) vue.hideSearchbar();
             });
         });
         // this.sample.image.src = "/static/runtime/sample.jpg";
