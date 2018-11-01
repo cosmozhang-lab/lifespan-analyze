@@ -72,15 +72,15 @@ window.location.query = (function(url) {
 })(window.location.href);
 
 window.location.uri = (function(url) {
-    return /[^\?#]+/.exec(url);
+    return /[^\?#]+/.exec(url)[0];
 })(window.location.href);
 
 function make_url(uri, query) {
     query = query || {};
     var url = uri;
-    var qks = keys(query);
+    var qks = Object.keys(query);
     if (qks.length > 0) {
-        var querystr = "?" + qks.map(function(k) { return k + "=" + query[k]; });
+        var querystr = "?" + qks.map(function(k) { return k + "=" + query[k]; }).join("&");
         url += querystr;
     }
     return url;

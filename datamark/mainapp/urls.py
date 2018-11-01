@@ -13,6 +13,7 @@ urls.append(('register', register))
 for item in login_apis:
     urls.append(("api/login/" + item[0], item[1]))
 urls.append(('marking', marking))
+urls.append(('reviewing', marking))
 for item in marking_apis:
     urls.append(("api/marking/" + item[0], item[1]))
 urls.append(('install', install))

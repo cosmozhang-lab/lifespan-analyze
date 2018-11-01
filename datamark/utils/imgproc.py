@@ -37,6 +37,8 @@ def detect_worm_2d(image):
     # while sepvalue < len(cshist) and cshist[sepvalue] < seppos:
     #     sepvalue += 1
     # bw = image > sepvalue
+    platearea = float(torch.sum(image > 0))
+    if platearea <= 0: return np.zeros(tuple(image.shape))
     meanv = float(torch.sum(image)) / float(torch.sum(image > 0))
     bw = image > (meanv * mp.worm_threshold)
     # image open operation

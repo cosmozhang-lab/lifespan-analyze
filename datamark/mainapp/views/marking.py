@@ -31,6 +31,21 @@ def statistics(request):
         "data": result
     })
 
+def make_userdir(user):
+    userpath = "static/runtime/" + user.username + "/"
+    dirpath = os.path.join(settings.BASE_DIR, userpath)
+    if not os.path.isdir(dirpath):
+        os.mkdir(dirpath)
+    return userpath
+
+def remove_userdir(user):
+    userpath = "static/runtime/" + user.username + "/"
+    dirpath = os.path.join(settings.BASE_DIR, userpath)
+    if os.path.isdir(dirpath):
+        filelist = os.listdir(dirpath)
+        for filename in filelist:
+            os.remove(os.path.join(dirpath, filename))
+
 def clear_pendings(request):
     user = getuser(request)
     if user is None: return HttpResponse(403)
@@ -38,13 +53,18 @@ def clear_pendings(request):
     dataset = Dataset.objects.get(setname=setname)
     samples = Sample.objects.filter(dataset=dataset, marker=user, status=Sample.STATUS_PENDING)
     samples.update(status=Sample.STATUS_UNMARKED)
-    for item in samples:
-        outname = item.plate + "__" + item.subdir
-        imagepath = os.path.join(settings.BASE_DIR, "static/runtime/" + outname + ".jpg")
-        matpath = os.path.join(settings.BASE_DIR, "static/runtime/" + outname + ".mat")
-        if os.path.exists(imagepath): os.remove(imagepath)
-        if os.path.exists(matpath): os.remove(matpath)
+    remove_userdir(user)
     return JsonResponse({ "success": True })
+
+def sample_list(request):
+    user = getuser(request)
+    if user is None: return HttpResponse(403)
+    dataset = Dataset.objects.get(setname=request.GET["setname"])
+    samples = [item["id"] for item in Sample.objects.filter(dataset=dataset).order_by("plate", "seq").values("id")]
+    return JsonResponse({
+            "success": True,
+            "data": samples
+        })
 
 def fetch_sample(request):
     user = getuser(request)
@@ -73,12 +93,13 @@ def fetch_sample(request):
                 "success": False,
                 "reason": "all samples in this dataset has been marked"
             })
+    userpath = make_userdir(user)
     if sample.status == Sample.STATUS_MARKED:
         markconfig = MarkConfig()
         outdir = os.path.join(markconfig.outdir, sample.dataset.setname, sample.plate)
         outname = sample.plate + "__" + sample.subdir
         storedname = os.path.join(outdir, outname)
-        extractname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
+        extractname = os.path.join(settings.BASE_DIR, userpath, outname)
         timing0 = time.time()
         props = review_sample(storedname, extractname)
         timing1 = time.time()
@@ -90,7 +111,7 @@ def fetch_sample(request):
         # prepare the sample
         filepath = os.path.join(sample.rootdir, sample.subdir, sample.filename)
         outname = sample.plate + "__" + sample.subdir
-        outfullname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
+        outfullname = os.path.join(settings.BASE_DIR, userpath, outname)
         timing0 = time.time()
         props = prepare_sample(filepath, outfullname)
         timing1 = time.time()
@@ -98,7 +119,7 @@ def fetch_sample(request):
     # make the return data
     retdata = {}
     retdata["sampleid"] = sample.id
-    retdata["imgsrc"] = "/static/runtime/" + outname + ".jpg"
+    retdata["imgsrc"] = "/" + userpath + outname + ".jpg"
     retdata["plate"] = sample.plate
     retdata["subdir"] = sample.subdir
     retdata["datetime"] = parse_datetime(sample.subdir).strftime("%Y-%m-%dT%H:%M:%S")
@@ -125,18 +146,19 @@ def complete_sample(request):
     regiontypes = [RegionType.get(name=item["type"]) for item in sampledata["marks"]]
     markedsample = PreparedSample(regions=regions, regiontypes=regiontypes)
     markconfig = MarkConfig()
+    userpath = make_userdir(user)
     outdir = markconfig.outdir
     outdir = os.path.join(outdir, sample.dataset.setname)
     if not os.path.exists(outdir): os.mkdir(outdir)
     outdir = os.path.join(outdir, sample.plate)
     if not os.path.exists(outdir): os.mkdir(outdir)
     inname = outname = sample.plate + "__" + sample.subdir
-    infullname = os.path.join(settings.BASE_DIR, "static", "runtime", outname)
+    infullname = os.path.join(settings.BASE_DIR, userpath, outname)
     outfullname = os.path.join(outdir, outname)
     imgproc_complete_sample(markedsample, infullname, outfullname)
     sample.status = Sample.STATUS_MARKED
     sample.marker = user
-    sample.datapath = outfullname + ".mata"
+    sample.datapath = outfullname + ".mat"
     sample.save()
     return JsonResponse({ "success": True })
 
@@ -177,6 +199,7 @@ def search_sample(request):
 apis = [
     ("statistics", statistics),
     ("clear_pendings", clear_pendings),
+    ("sample_list", sample_list),
     ("fetch_sample", fetch_sample),
     ("complete_sample", complete_sample),
     ("search_sample", search_sample)
