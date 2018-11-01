@@ -100,6 +100,10 @@ Data Mark
     box-shadow: 0 0 5px 3px white;
 }
 
+.searchbar-trigger {
+    height: 30px;
+    line-height: 30px;
+}
 .searchbar {
     position: relative;
     height: 30px;
@@ -147,22 +151,28 @@ Data Mark
 </div>
 <div class="row" style="margin-top: 20px">
     <div class="col-sm-4">
-        <span class="searchbar-trigger" v-show="!searchbar.searching" v-on:click="showSearchbar">{{ sample.title }}</span>
+        <div class="searchbar-trigger" v-show="!searchbar.searching" v-on:click="showSearchbar">{{ sample.title }}</div>
         <div class="searchbar" v-show="searchbar.searching">
             <input type="text" class="form-control searchbox" id="searchbox" placeholder="e.g. G4 2018-09-16 13:50:12" v-model="searchbar.string" v-on:keyup="doSearch">
             <div class="list-group searchlist" v-show="searchbar.result">
-                <a v-for="item in searchbar.result" class="list-group-item searchlist-item" v-on:click.stop="loadSample(item.sampleid, $event)" href="javascript:;">{{ item.title }}</a>
+                <a v-for="item in searchbar.result" class="list-group-item searchlist-item" v-on:click.stop="loadSample(item.sampleid)" href="javascript:;">{{ item.title }}</a>
             </div>
         </div>
     </div>
     <div class="col-sm-2">
-        <div class="btn-group">
+        <div class="btn-group" v-if="!reviewing.reviewing && rank">
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span>{{ rank.name }}</span><span>&nbsp;</span><span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
                 <li><a v-for="item in rankitems" href="javascript:;" v-on:click="changeRank(item.value)">{{ item.name }}</a></li>
             </ul>
+        </div>
+        <div class="btn-group" v-if="reviewing.reviewing">
+            <button type="button" class="btn btn-default" v-on:click="navSample(-100)"><i class="fa fa-angle-double-left"></i></button>
+            <button type="button" class="btn btn-default" v-on:click="navSample(-1)"><i class="fa fa-angle-left"></i></button>
+            <button type="button" class="btn btn-default" v-on:click="navSample(+1)"><i class="fa fa-angle-right"></i></button>
+            <button type="button" class="btn btn-default" v-on:click="navSample(+100)"><i class="fa fa-angle-double-right"></i></button>
         </div>
     </div>
     <div class="col-sm-6 mode-bar-wrapper">
@@ -284,6 +294,11 @@ var vue = new Vue({
             imagerect: { x: 0, y: 0, width: 0, height: 0 },
             imagepresspos: { x: 0, y: 0 },
             zoomframe: { show: false, x: 0, y: 0, width: 0, height: 0 }
+        },
+        reviewing: {
+            reviewing: false,
+            sampleids: [],
+            currentidx: 0
         }
     },
     methods: {
@@ -316,10 +331,14 @@ var vue = new Vue({
         onViewerImageLoad: function() {
             var that = this;
             that.resetZoom();
-            if (that.preload) {
+            if (!that.reviewing.reviewing && that.preload) {
                 that.preloadsample.valid = false;
                 that.preloadsample.loading = true;
-                $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
+                $.get(make_url('/api/marking/fetch_sample', {
+                        setname: that.setname,
+                        rank: that.rank.value,
+                        mode: that.mode
+                    }), function(data) {
                     if (data.success) {
                         data = data.data;
                         that.preloadsample.valid = true;
@@ -529,26 +548,43 @@ var vue = new Vue({
                         data: JSON.stringify(submitdata),
                     })
                     .done(function() {
-                        that.preload = true;
-                        if (that.preloadsample.valid) {
-                            that.sample.sampleid    = that.preloadsample.sampleid;
-                            that.sample.title       = that.preloadsample.title;
-                            that.sample.marks       = that.preloadsample.marks;
-                            that.sample.originmarks = that.preloadsample.originmarks;
-                            that.sample.image.src   = that.preloadsample.image.src;
-                            that.sample.marksize    = that.preloadsample.marksize;
-                            that.sample.activeMark.show = false;
+                        if (that.reviewing.reviewing) {
+                            var nextidx = that.reviewing.currentidx + 1;
+                            var sampleids = that.reviewing.sampleids;
+                            if (nextidx >= that.reviewing.sampleids.length) {
+                                that.sample.title = "";
+                                that.sample.marks = [];
+                                that.sample.originmarks = "[]";
+                                that.sample.image.src = "";
+                                that.viewer.imgsrc = "";
+                                that.sample.activeMark.show = false;
+                                messagebox("Marking", "Cannot load new sample. Because this is the last sample.");
+                                status_loading(false);
+                            } else {
+                                if (!that.navSample(1)) status_loading(false);
+                            }
                         } else {
-                            that.sample.title = "";
-                            that.sample.marks = [];
-                            that.sample.originmarks = "[]";
-                            that.sample.image.src = "";
-                            that.viewer.imgsrc = "";
-                            that.sample.activeMark.show = false;
-                            messagebox("Marking", "Cannot load new sample. Because: " + that.preloadsample.invalid_reason);
+                            that.preload = true;
+                            if (that.preloadsample.valid) {
+                                that.sample.sampleid    = that.preloadsample.sampleid;
+                                that.sample.title       = that.preloadsample.title;
+                                that.sample.marks       = that.preloadsample.marks;
+                                that.sample.originmarks = that.preloadsample.originmarks;
+                                that.sample.image.src   = that.preloadsample.image.src;
+                                that.sample.marksize    = that.preloadsample.marksize;
+                                that.sample.activeMark.show = false;
+                            } else {
+                                that.sample.title = "";
+                                that.sample.marks = [];
+                                that.sample.originmarks = "[]";
+                                that.sample.image.src = "";
+                                that.viewer.imgsrc = "";
+                                that.sample.activeMark.show = false;
+                                messagebox("Marking", "Cannot load new sample. Because: " + that.preloadsample.invalid_reason);
+                            }
+                            that.updateStatistics();
+                            status_loading(false);
                         }
-                        that.updateStatistics();
-                        status_loading(false);
                     });
                 }
             }
@@ -602,11 +638,11 @@ var vue = new Vue({
                 that.searchbar.result = [];
             }
         },
-        loadSample: function (sampleid, event) {
+        loadSample: function (sampleid, callback) {
             var that = this;
             that.hideSearchbar();
             status_loading(true);
-            $.get('/api/marking/fetch_sample?sampleid=' + sampleid, function(data) {
+            $.get(make_url('/api/marking/fetch_sample', { sampleid: sampleid }), function(data) {
                 if (data.success) {
                     data = data.data;
                     that.preload = false;
@@ -617,8 +653,10 @@ var vue = new Vue({
                     that.sample.activeMark.show = false;
                     that.sample.image.src = data.imgsrc;
                     that.sample.marksize = data.marksize;
+                    if (callback) callback(true);
                 } else {
                     messagebox("Marking", "Cannot load this sample. Because: " + data.reason);
+                    if (callback) callback(false);
                 }
                 status_loading(false);
             });
@@ -626,6 +664,23 @@ var vue = new Vue({
         changeRank: function (rankvalue) {
             if (rankvalue == this.rank) return;
             window.location.href = make_url(window.location.uri, $.extend({}, window.location.query, { rank: rankvalue }));
+        },
+        navSample: function(direction) {
+            var that = this;
+            var currentidx = that.reviewing.currentidx;
+            var sampleids = that.reviewing.sampleids;
+            var newidx = currentidx;
+            if (direction == 1) newidx += 1;
+            else if (direction == -1) newidx -= 1;
+            else if (direction > 1) newidx = sampleids.length - 1;
+            else if (direction < -1) newidx = 0;
+            if (newidx < 0) newidx = 0;
+            if (newidx >= sampleids.length) newidx = sampleids.length - 1;
+            if (newidx == currentidx) return false;
+            that.loadSample(sampleids[newidx], function (ok) {
+                that.reviewing.currentidx = newidx;
+            });
+            return true;
         }
     },
     computed: {
@@ -689,7 +744,17 @@ var vue = new Vue({
     },
     created: function () {
         var that = this;
-        this.setname = window.location.query.setname;
+        that.setname = window.location.query.setname;
+        function get_rank_item(value) {
+            for (var i = 0; i < that.rankitems.length; i++) {
+                if (that.rankitems[i].value == value) return that.rankitems[i];
+            }
+            return null;
+        }
+        var finalpath = window.location.uri.split("/");
+        finalpath = finalpath[finalpath.length-1];
+        that.rank = get_rank_item(window.location.query.rank || (finalpath == "reviewing" ? "ascending" : "descending"));
+        that.reviewing.reviewing = (finalpath == "reviewing");
         $(function () {
             that.viewer.el = $('#image-wrapper');
             that.viewer.img = $('#image');
@@ -833,21 +898,47 @@ var vue = new Vue({
                 type: 'POST'
             })
             .done(function(data) {
-                $.get('/api/marking/fetch_sample?setname=' + that.setname, function(data) {
-                    if (data.success) {
-                        data = data.data;
-                        that.sample.sampleid = data.sampleid;
-                        that.sample.title = data.plate + "   " + data.datetime.replace("T", " ");
-                        that.sample.marks = data.marks;
-                        that.sample.originmarks = JSON.stringify(data.marks);
-                        that.sample.activeMark.show = false;
-                        that.sample.image.src = data.imgsrc;
-                        that.sample.marksize = data.marksize;
-                    } else {
-                        messagebox("Marking", "Cannot load new sample. Because: " + data.reason);
-                    }
-                    status_loading(false);
-                });
+                if (that.reviewing.reviewing) {
+                    $.get(make_url('/api/marking/sample_list', { setname: that.setname }), function(data) {
+                        that.reviewing.sampleids = data.data;
+                        that.reviewing.currentidx = 0;
+                        $.get(make_url('/api/marking/fetch_sample', { sampleid: that.reviewing.sampleids[that.reviewing.currentidx] }), function(data) {
+                            if (data.success) {
+                                data = data.data;
+                                that.sample.sampleid = data.sampleid;
+                                that.sample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                                that.sample.marks = data.marks;
+                                that.sample.originmarks = JSON.stringify(data.marks);
+                                that.sample.activeMark.show = false;
+                                that.sample.image.src = data.imgsrc;
+                                that.sample.marksize = data.marksize;
+                            } else {
+                                messagebox("Marking", "Cannot load the sample. Because: " + data.reason);
+                            }
+                            status_loading(false);
+                        });
+                    });
+                } else {
+                    $.get(make_url('/api/marking/fetch_sample', {
+                            setname: that.setname,
+                            rank: that.rank.value,
+                            mode: that.mode
+                        }), function(data) {
+                        if (data.success) {
+                            data = data.data;
+                            that.sample.sampleid = data.sampleid;
+                            that.sample.title = data.plate + "   " + data.datetime.replace("T", " ");
+                            that.sample.marks = data.marks;
+                            that.sample.originmarks = JSON.stringify(data.marks);
+                            that.sample.activeMark.show = false;
+                            that.sample.image.src = data.imgsrc;
+                            that.sample.marksize = data.marksize;
+                        } else {
+                            messagebox("Marking", "Cannot load new sample. Because: " + data.reason);
+                        }
+                        status_loading(false);
+                    });
+                }
             });
         });
     }
