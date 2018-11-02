@@ -204,6 +204,11 @@ Data Mark
                 style="color: #FFCC00"
                 v-on:click="toggleMarkMode('blank')"
                 v-bind:class="{ active: (viewer.markmode == 'blank') }">B</span>
+            <span class="mode-item mode-item-colored"
+                data-toggle="tooltip" data-placement="top" title="Delete"
+                style="color: #FFFFFF"
+                v-on:click="toggleMarkMode('delete')"
+                v-bind:class="{ active: (viewer.markmode == 'delete') }">X</span>
         </div>
     </div>
 </div>
@@ -336,8 +341,7 @@ var vue = new Vue({
                 that.preloadsample.loading = true;
                 $.get(make_url('/api/marking/fetch_sample', {
                         setname: that.setname,
-                        rank: that.rank.value,
-                        mode: that.mode
+                        rank: that.rank.value
                     }), function(data) {
                     if (data.success) {
                         data = data.data;
@@ -487,7 +491,7 @@ var vue = new Vue({
             var oy = (my - imy) / s;
             for (var i = this.sample.marks.length - 1; i >= 0; i--) {
                 var markitem = this.sample.marks[i];
-                if ((ox >= markitem.x) && (ox < markitem.x + markitem.width) && (oy >= markitem.y) && (oy < markitem.y + markitem.height))
+                if ((!markitem.deleted) && (ox >= markitem.x) && (ox < markitem.x + markitem.width) && (oy >= markitem.y) && (oy < markitem.y + markitem.height))
                     return markitem;
             }
             return null;
@@ -527,9 +531,12 @@ var vue = new Vue({
             var that = this;
             var submitdata = {
                 sampleid: that.sample.sampleid,
-                marks: that.sample.marks.map(function (item) {
+                marks: that.sample.marks.filter(function(item) {
+                    return !item.deleted;
+                }).map(function (item) {
                     return {
                         "type": item.type,
+                        "rid": item.rid,
                         "x": item.x,
                         "y": item.y,
                         "width": item.width,
@@ -726,11 +733,13 @@ var vue = new Vue({
             var ret = [];
             for (var i = 0; i < that.sample.marks.length; i++) {
                 var markitem = that.sample.marks[i];
-                ret.push({
-                    index: i,
-                    data: markitem,
-                    styles: that.viewerMarkBoxStyles(markitem)
-                });
+                if (!markitem.deleted) {
+                    ret.push({
+                        index: i,
+                        data: markitem,
+                        styles: that.viewerMarkBoxStyles(markitem)
+                    });
+                }
             }
             return ret;
         },
@@ -808,7 +817,7 @@ var vue = new Vue({
                         that.viewer.zoomframe.show = true;
                     }
                 } else if (that.viewer.mode == "mark") {
-                    if (["target", "mistake", "unknown"].indexOf(that.viewer.markmode) >= 0) {
+                    if (["target", "mistake", "unknown", "delete"].indexOf(that.viewer.markmode) >= 0) {
                         var markitem = that.hoverMark(event);
                         if (markitem) {
                             that.sample.activeMark.type = that.viewer.markmode;
@@ -868,8 +877,12 @@ var vue = new Vue({
                         var markitem = that.cursorMark(event);
                         if (markitem) {
                             markitem.type = that.viewer.markmode;
+                            markitem.rid = -1;
                             that.sample.marks = [].concat(that.sample.marks, [markitem]);
                         }
+                    } else if (that.viewer.markmode == "delete") {
+                        var markitem = that.hoverMark(event);
+                        if (markitem) markitem.deleted = true;
                     }
                 }
             });
@@ -928,8 +941,7 @@ var vue = new Vue({
                 } else {
                     $.get(make_url('/api/marking/fetch_sample', {
                             setname: that.setname,
-                            rank: that.rank.value,
-                            mode: that.mode
+                            rank: that.rank.value
                         }), function(data) {
                         if (data.success) {
                             data = data.data;

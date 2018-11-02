@@ -128,11 +128,12 @@ def fetch_sample(request):
     retdata["proctime"] = timing
     retdata["marks"] = [{
             "type": props.regiontypes[i].name,
+            "rid": props.regionids[i],
             "x": props.regions[i].x,
             "y": props.regions[i].y,
             "width": props.regions[i].width,
             "height": props.regions[i].height
-        } for i in range(len(props.regiontypes))]
+        } for i in range(len(props.regions))]
     retdata["marksize"] = { "width": marksize[1], "height": marksize[0] }
     return JsonResponse({
             "success": True,
@@ -146,7 +147,8 @@ def complete_sample(request):
     sample = Sample.objects.get(id=sampledata["sampleid"])
     regions = [Rect(item["x"], item["y"], item["width"], item["height"]) for item in sampledata["marks"]]
     regiontypes = [RegionType.get(name=item["type"]) for item in sampledata["marks"]]
-    markedsample = PreparedSample(regions=regions, regiontypes=regiontypes)
+    regionids = [int(item["rid"]) for item in sampledata["marks"]]
+    markedsample = PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids)
     userpath = get_userdir(user)
     outname = get_filename(sample)
     cachefullname = os.path.join(settings.BASE_DIR, userpath, outname)

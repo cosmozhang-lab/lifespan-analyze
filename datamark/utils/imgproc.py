@@ -98,20 +98,22 @@ def mark_regions(bwl):
     return regions
 
 class PreparedSample:
-    def __init__(self, regions=None, regiontypes=None):
+    def __init__(self, regions=None, regiontypes=None, regionids=None):
         self.regions = regions
         self.regiontypes = regiontypes
+        self.regionids = regionids
 
 def prepare_sample(filepath=None, cachename=None, storename=None):
     if storename and os.path.exists(storename + ".mat"):
         loaddata = loadmat(storename + ".mat")
         img = loaddata["img"]
         regions = [Rect(int(x[0]),int(x[1]),int(x[2]),int(x[3])) for x in loaddata["regions"]]
+        regionids = [int(i) for i in np.squeeze(loaddata["regionids"])]
         regiontypes = [RegionType.get(num=int(x)) for x in np.squeeze(loaddata["regiontypes"])]
         cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
         savemat(cachename + ".mat", loaddata)
         shutil.copy(storename + ".mat", cachename + ".mat")
-        return PreparedSample(regions=regions, regiontypes=regiontypes)
+        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids)
     elif filepath:
         img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
         im = img.copy()
@@ -120,28 +122,34 @@ def prepare_sample(filepath=None, cachename=None, storename=None):
         bwlworms = detect_worm_2d(im)
         regions = mark_regions(bwlworms)
         regiontypes = [RegionType.UNKNOWN for i in range(len(regions))]
+        regionids = [(i+1) for i in range(len(regions))]
         npregiontypes = np.array([item.num for item in regiontypes]).astype(np.uint8)
+        npregionids = np.array(regionids).astype(np.int32)
         npregions = np.array([[item.x, item.y, item.width, item.height] for item in regions]).astype(np.int32)
         savemat(cachename + ".mat", {
                 "img": img,
                 "bwlworms": bwlworms,
                 "regiontypes": npregiontypes,
+                "regionids": npregionids,
                 "regions": npregions
             })
         cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
         if storename:
             shutil.copy(cachename + ".mat", storename + ".mat")
-        return PreparedSample(regions=regions, regiontypes=regiontypes)
+        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids)
     else:
         return None
 
 def complete_sample(sample, cachename=None, storename=None):
     regiontypes = sample.regiontypes
+    regionids = sample.regionids
     regions = sample.regions
     npregiontypes = np.array([item.num for item in regiontypes]).astype(np.uint8)
+    npregionids = np.array([i for i in regionids]).astype(np.int32)
     npregions = np.array([[item.x, item.y, item.width, item.height] for item in regions]).astype(np.int32)
     thedata = loadmat(cachename + ".mat")
     thedata["regiontypes"] = npregiontypes
+    thedata["regionids"] = npregionids
     thedata["regions"] = npregions
     savemat(storename + ".mat", thedata)
     os.remove(cachename + ".jpg")

@@ -7,4 +7,4 @@ marksize = (256, 256)
 worm_minarea = 500
 worm_maxarea = 8500
 plate_threshold = 35
-worm_threshold = 0.5
+worm_threshold = 0.65
