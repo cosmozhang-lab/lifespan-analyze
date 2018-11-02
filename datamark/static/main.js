@@ -66,7 +66,7 @@ window.location.query = (function(url) {
     var querydict = {};
     for (var i = 0; i < queryarr.length; i++) {
         var queryitem = queryarr[i].split("=");
-        querydict[queryitem[0]] = queryitem[1];
+        querydict[queryitem[0]] = ((queryitem.length > 1) ? queryitem[1] : null);
     }
     return querydict;
 })(window.location.href);

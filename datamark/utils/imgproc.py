@@ -3,7 +3,7 @@ import numpy as np, torch, skimage, cv2
 from .algos import fill_holes, make_coors, torch_bwcentroid, torch_bwopen
 from .common import RegionType
 from scipy.io import loadmat, savemat
-import os
+import os, shutil
 
 constants = {
     "coors": make_coors(mp.imagesize)
@@ -102,42 +102,47 @@ class PreparedSample:
         self.regions = regions
         self.regiontypes = regiontypes
 
-def prepare_sample(filepath, outname):
-    img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-    im = img.copy()
-    bw = plate_bw(im)
-    im[bw==0] = 0
-    bwlworms = detect_worm_2d(im)
-    regions = mark_regions(bwlworms)
-    regiontypes = [RegionType.UNKNOWN for i in range(len(regions))]
-    npregiontypes = np.array([item.num for item in regiontypes]).astype(np.uint8)
-    npregions = np.array([[item.x, item.y, item.width, item.height] for item in regions]).astype(np.int32)
-    savemat(outname + ".mat", {
-            "img": img,
-            "bwlworms": bwlworms,
-            "regiontypes": npregiontypes,
-            "regions": npregions
-        })
-    cv2.imwrite(outname + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
-    return PreparedSample(regions=regions, regiontypes=regiontypes)
+def prepare_sample(filepath=None, cachename=None, storename=None):
+    if storename and os.path.exists(storename + ".mat"):
+        loaddata = loadmat(storename + ".mat")
+        img = loaddata["img"]
+        regions = [Rect(int(x[0]),int(x[1]),int(x[2]),int(x[3])) for x in loaddata["regions"]]
+        regiontypes = [RegionType.get(num=int(x)) for x in np.squeeze(loaddata["regiontypes"])]
+        cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
+        savemat(cachename + ".mat", loaddata)
+        shutil.copy(storename + ".mat", cachename + ".mat")
+        return PreparedSample(regions=regions, regiontypes=regiontypes)
+    elif filepath:
+        img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+        im = img.copy()
+        bw = plate_bw(im)
+        im[bw==0] = 0
+        bwlworms = detect_worm_2d(im)
+        regions = mark_regions(bwlworms)
+        regiontypes = [RegionType.UNKNOWN for i in range(len(regions))]
+        npregiontypes = np.array([item.num for item in regiontypes]).astype(np.uint8)
+        npregions = np.array([[item.x, item.y, item.width, item.height] for item in regions]).astype(np.int32)
+        savemat(cachename + ".mat", {
+                "img": img,
+                "bwlworms": bwlworms,
+                "regiontypes": npregiontypes,
+                "regions": npregions
+            })
+        cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
+        if storename:
+            shutil.copy(cachename + ".mat", storename + ".mat")
+        return PreparedSample(regions=regions, regiontypes=regiontypes)
+    else:
+        return None
 
-def complete_sample(sample, inname, outname):
+def complete_sample(sample, cachename=None, storename=None):
     regiontypes = sample.regiontypes
     regions = sample.regions
     npregiontypes = np.array([item.num for item in regiontypes]).astype(np.uint8)
     npregions = np.array([[item.x, item.y, item.width, item.height] for item in regions]).astype(np.int32)
-    thedata = loadmat(inname + ".mat")
+    thedata = loadmat(cachename + ".mat")
     thedata["regiontypes"] = npregiontypes
     thedata["regions"] = npregions
-    savemat(outname + ".mat", thedata)
-    os.remove(inname + ".jpg")
-    os.remove(inname + ".mat")
-
-def review_sample(storedname, outname):
-    loaddata = loadmat(storedname + ".mat")
-    img = loaddata["img"]
-    regions = [Rect(int(x[0]),int(x[1]),int(x[2]),int(x[3])) for x in loaddata["regions"]]
-    regiontypes = [RegionType.get(num=int(x)) for x in np.squeeze(loaddata["regiontypes"])]
-    cv2.imwrite(outname + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
-    savemat(outname + ".mat", loaddata)
-    return PreparedSample(regions=regions, regiontypes=regiontypes)
+    savemat(storename + ".mat", thedata)
+    os.remove(cachename + ".jpg")
+    os.remove(cachename + ".mat")

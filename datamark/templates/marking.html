@@ -677,8 +677,15 @@ var vue = new Vue({
             if (newidx < 0) newidx = 0;
             if (newidx >= sampleids.length) newidx = sampleids.length - 1;
             if (newidx == currentidx) return false;
+            var oldsampleid = sampleids[currentidx];
             that.loadSample(sampleids[newidx], function (ok) {
-                that.reviewing.currentidx = newidx;
+                if (ok) {
+                    that.reviewing.currentidx = newidx;
+                    $.ajax({
+                        url: make_url("/api/marking/clear_sample_cache", {sampleid: oldsampleid}),
+                        type: 'POST'
+                    });                    
+                }
             });
             return true;
         }
