@@ -21,8 +21,10 @@ def torch_bwopen(bw, stel):
     sumstel = torch.sum(stel)
     kh,kw = tuple(stel.shape[-2:])
     pdh,pdw = (int(kh/2),int(kw/2))
+    bw = bw.reshape([1,1] + list(bw.shape[-2:])).type(torch.float32)
     bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) == sumstel).type(torch.float32)
     bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) > 0).type(torch.float32)
+    bw = bw.reshape(list(bw.shape[-2:])).type(torch.uint8)
     return bw
 
 def make_coors(image_size):
@@ -37,3 +39,27 @@ def torch_bwcentroid(bw, coors=None):
     numelems = torch.sum(bw)
     bw = bw.type(torch.float32)
     return tuple([(float(torch.sum(bw * cooritem)) / numelems) for cooritem in coors])
+
+# def make_localthreshold_kernel(ksize):
+#     return torch.cuda.FloatTensor(np.ones(ksize)) / np.prod(ksize)
+
+# def torch_localthreshold(im, kernel=None, ksize=None):
+#     if kernel is None:
+#         kernel = make_localthreshold_kernel(ksize)
+#     ksize = tuple(kernel.shape)
+#     kh,kw = tuple(kernel.shape[-2:])
+#     pdh,pdw = (int(kh/2),int(kw/2))
+#     blurred = torch.conv2d(im, kernel, padding=(pdh,pdw))
+
+def torch_localmean(im, ksize=None):
+    imsize = tuple(im.shape)
+    im = im.type(torch.float32).reshape([1,1]+list(imsize))
+    kernel = torch.cuda.FloatTensor(np.ones(ksize)).reshape([1,1]+list(ksize))
+    kh,kw = tuple(kernel.shape[-2:])
+    pdh,pdw = (int(kh/2),int(kw/2))
+    ones = torch.cuda.FloatTensor(np.ones(im.shape))
+    summing = torch.conv2d(im, kernel, padding=(pdh,pdw))
+    frac = torch.conv2d(ones, kernel, padding=(pdh,pdw))
+    blurred = summing / frac
+    blurred = blurred.reshape(imsize)
+    return blurred

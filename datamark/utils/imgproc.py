@@ -1,13 +1,12 @@
 from . import mainparams as mp
 import numpy as np, torch, skimage, cv2
-from .algos import fill_holes, make_coors, torch_bwcentroid, torch_bwopen
+from .algos import fill_holes, make_coors, torch_bwcentroid, torch_bwopen, torch_localmean
 from .common import RegionType
 from scipy.io import loadmat, savemat
 import os, shutil
 
-constants = {
-    "coors": make_coors(mp.imagesize)
-}
+constants = {}
+constants["coors"] = make_coors(mp.imagesize)
 
 def plate_bw(image):
     bw = (image >= mp.plate_threshold).astype(np.uint8)
@@ -27,6 +26,7 @@ def plate_bw(image):
 
 def detect_worm_2d(image):
     image = torch.cuda.ByteTensor(image)
+    #
     # platebw = image > 0
     # nvalid = int(torch.sum(platebw))
     # hist = torch.histc(image.cpu().type(torch.float32), bins=256, min=0, max=255)
@@ -37,16 +37,20 @@ def detect_worm_2d(image):
     # while sepvalue < len(cshist) and cshist[sepvalue] < seppos:
     #     sepvalue += 1
     # bw = image > sepvalue
+    #
     platearea = float(torch.sum(image > 0))
     if platearea <= 0: return np.zeros(tuple(image.shape))
     meanv = float(torch.sum(image)) / float(torch.sum(image > 0))
     bw = image > (meanv * mp.worm_threshold)
+    #
+    # th = torch_localmean(image, mp.localthreshold_size) * mp.worm_threshold
+    # bw = image.type(torch.float32) > th
+    # bw[image==0] = 0
     # image open operation
-    bw = bw.reshape([1,1] + list(bw.shape[-2:])).type(torch.float32)
     bw = torch_bwopen(bw, np.zeros([5,5]) + 1)
     bw = 1 - bw
     # detect worms
-    bw = bw.type(torch.uint8).cpu().numpy().reshape(list(bw.shape[-2:]))
+    bw = bw.cpu().numpy()
     bwl,nbwl = skimage.measure.label(bw, return_num=True)
     bwp = skimage.measure.regionprops(bwl)
     bwa = np.array([x.area for x in bwp])
