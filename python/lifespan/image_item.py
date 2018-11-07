@@ -1,6 +1,7 @@
 import numpy as np
 from .utils import parse_datetime, stringify_datetime
 import cv2
+from scipy.io import savemat, loadmat
 from . import mainparams as mp
 import re, os, shutil
 
@@ -41,8 +42,9 @@ class ImageItem:
                         self.image = cv2.imread(bufffilename, cv2.IMREAD_UNCHANGED)
                     self.save_jpeg()
                 else:
-                    bufffilename = os.path.join(self.buffdir, nameparts[-2] + "." + str(mp.startstep.before) + mp.imgsuffix)
-                    self.image = cv2.imread(bufffilename, cv2.IMREAD_UNCHANGED)
+                    # bufffilename = os.path.join(self.buffdir, nameparts[-2] + "." + str(mp.startstep.before) + mp.imgsuffix)
+                    # self.image = cv2.imread(bufffilename, cv2.IMREAD_UNCHANGED)
+                    self.load_step(str(mp.startstep.before))
         else:
             self.time = parse_datetime(time)
             self.plate = plate
@@ -68,7 +70,19 @@ class ImageItem:
             return False
         if self.buffdir is None:
             return False
-        bufffilename = os.path.join(self.buffdir, self.subdirname + "." + str(name) + mp.imgsuffix)
-        cv2.imwrite(bufffilename, self.image)
+        # bufffilename = os.path.join(self.buffdir, self.subdirname + "." + str(name) + mp.imgsuffix)
+        # cv2.imwrite(bufffilename, self.image)
+        bufffilename = os.path.join(self.buffdir, self.subdirname + "." + str(name) + ".mat")
+        savedata = {}
+        if not self.image is None: savedata["image"] = self.image
+        savemat(bufffilename, savedata)
+        return True
+
+    def load_step(self, name="step"):
+        if self.buffdir is None:
+            return False
+        bufffilename = os.path.join(self.buffdir, self.subdirname + "." + str(name) + ".mat")
+        loaddata = loadmat(bufffilename)
+        if "image" in loaddata: self.image = loaddata["image"]
         return True
     

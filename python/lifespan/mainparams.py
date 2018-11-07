@@ -38,3 +38,4 @@ death_overlap_threshold_for_selecting = 0.5
 worm_minarea = 750
 worm_maxarea = 3500
 plate_threshold = 35
+worm_threshold = 80

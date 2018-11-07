@@ -26,8 +26,6 @@ def plate_centroid(image):
     # determine the centroid
     tgbw = torch.Tensor(bw).cuda()
     centroid = torch_bwcentroid(tgbw, constants["coors"])
-    # centroid = skimage.measure.regionprops(bw)[0].centroid
-    # return
     return np.array(centroid).astype(np.int32), bw
 
 # shifting: (y, x)
@@ -47,6 +45,7 @@ def main_registrate():
     c0, ims[0].bw = plate_centroid(ims[0].image)
     ims[0].image = np.array(ims[0].image)
     ims[0].image[ims[0].bw == 0] = 0
+    ims[0].save_step(mp.steps.registrate)
     mp.verbose >= 5 and print("registrating...")
     def dolog(index):
         if mp.verbose >= 10:
@@ -59,6 +58,7 @@ def main_registrate():
         oridata = ims[i].image
         ims[i].shifting = c0 - c1
         ims[i].image = shift_image(ims[i].image, c0 - c1)
+        ims[i].image[ims[i].bw==0] = 0
         ims[i].save_step(mp.steps.registrate)
         dolog(i)
     save_shiftings()

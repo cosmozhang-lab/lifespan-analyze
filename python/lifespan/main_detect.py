@@ -5,24 +5,29 @@ import skimage
 from .algos import fill_holes, torch_bwopen
 
 def detect_worm_2d(image):
-    thv, bw = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # thv, bw = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    image = torch.cuda.FloatTensor(image)
+    bw = (image < mp.worm_threshold)
+    bw[image==0] = 0
     # image open operation
-    bw = torch.Tensor(bw).cuda().reshape([1,1] + list(bw.shape[-2:])).type(torch.float32)
-    bw = torch_bwopen(bw, np.zeros([5,5]) + 1)
-    bw = 1 - bw
+    # bw = torch_bwopen(bw, np.zeros([11,11]) + 1)
     # detect worms
-    bw = bw.type(torch.uint8).cpu().numpy().reshape(list(bw.shape[-2:]))
+    bw = bw.type(torch.uint8).cpu().numpy()
     bwl,nbwl = skimage.measure.label(bw, return_num=True)
     bwp = skimage.measure.regionprops(bwl)
     bwa = np.array([x.area for x in bwp])
-    bw = np.zeros(tuple(bw.shape), np.uint8)
+    bwlm = torch.IntTensor(np.zeros(tuple(bw.shape)))
+    bwl = torch.IntTensor(bwl)
+    label = 0
     for i in range(nbwl):
         if bwa[i] > mp.worm_minarea and bwa[i] < mp.worm_maxarea:
-            bw += (bwl == (i + 1))
+            label += 1
+            bwlm += ((bwl==(i+1)).type(torch.int32) * label)
+    bw = (bwlm>0).type(torch.uint8)
     # # fill holes
     # from .algos import fill_holes 
     # bw = fill_holes(bw)
-    return bw
+    return bwlm.cpu().numpy()
 
 def main_detect():
     ims = gv.images

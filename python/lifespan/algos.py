@@ -21,8 +21,10 @@ def torch_bwopen(bw, stel):
     sumstel = torch.sum(stel)
     kh,kw = tuple(stel.shape[-2:])
     pdh,pdw = (int(kh/2),int(kw/2))
+    bw = torch.reshape(bw, [1,1] + list(bw.shape[-2:]))
     bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) == sumstel).type(torch.float32)
     bw = (torch.conv2d(bw, stel, padding=(pdh,pdw)) > 0).type(torch.float32)
+    bw = torch.reshape(bw, list(bw.shape[-2:]))
     return bw
 
 def make_coors(image_size):
