@@ -26,29 +26,10 @@ def plate_bw(image):
 
 def detect_worm_2d(image):
     image = torch.cuda.ByteTensor(image)
-    #
-    # platebw = image > 0
-    # nvalid = int(torch.sum(platebw))
-    # hist = torch.histc(image.cpu().type(torch.float32), bins=256, min=0, max=255)
-    # hist[0] = 0
-    # cshist = torch.cumsum(hist, dim=0).numpy()
-    # seppos = int(cshist[-1]) * 0.5
-    # sepvalue = 0
-    # while sepvalue < len(cshist) and cshist[sepvalue] < seppos:
-    #     sepvalue += 1
-    # bw = image > sepvalue
-    #
-    platearea = float(torch.sum(image > 0))
-    if platearea <= 0: return np.zeros(tuple(image.shape))
-    meanv = float(torch.sum(image)) / float(torch.sum(image > 0))
-    bw = image > (meanv * mp.worm_threshold)
-    #
-    # th = torch_localmean(image, mp.localthreshold_size) * mp.worm_threshold
-    # bw = image.type(torch.float32) > th
-    # bw[image==0] = 0
+    bw = image.type(torch.float32) < mp.worm_threshold
+    bw[image==0] = 0
     # image open operation
-    bw = torch_bwopen(bw, np.zeros([5,5]) + 1)
-    bw = 1 - bw
+    # bw = torch_bwopen(bw, np.ones([11,11]))
     # detect worms
     bw = bw.cpu().numpy()
     bwl,nbwl = skimage.measure.label(bw, return_num=True)

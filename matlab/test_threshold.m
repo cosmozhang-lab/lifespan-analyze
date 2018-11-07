@@ -46,8 +46,8 @@ hplt = imhist(implt);
 th = 90;
 
 bwwrm = (implt<th);
-se = strel('disk',5);
-bwwrm = imopen(bwwrm,se);
+% se = strel('disk',5);
+% bwwrm = imopen(bwwrm,se);
 % bwwrm = imclose(bwwrm,se);
 bwlwrm = bwlabel(bwwrm);
 bwp = regionprops(bwwrm,'Area');
