@@ -43,11 +43,11 @@ hplt = imhist(implt);
 % heb = hem-(hea-hem);
 % th = heb;
 
-th = 90;
+th = 80;
 
 bwwrm = (implt<th);
-% se = strel('disk',5);
-% bwwrm = imopen(bwwrm,se);
+se = strel('disk',5);
+bwwrm = imopen(bwwrm,se);
 % bwwrm = imclose(bwwrm,se);
 bwlwrm = bwlabel(bwwrm);
 bwp = regionprops(bwwrm,'Area');

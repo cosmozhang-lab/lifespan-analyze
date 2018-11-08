@@ -14,6 +14,3 @@ mp.outdir = "/disk1/home/cosmo/downloads"
 mp.savebuff = False
 mp.savejpeg = False
 mp.savesteps = False
-
-# these should not be overrided here
-mp.finterval = 3
