@@ -20,8 +20,10 @@ class DeathResult:
 def death_judge(manager, fcurrent, finterval, overlap_threshold):
     bwoverlap = torch.cuda.ByteTensor(np.ones(mp.imagesize))
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
-        if manager[i].error is None:
-            bwoverlap = bwoverlap & manager[i].gpuwormbw
+        if manager[i].error:
+            return DeathJudgement(numdeaths=0, bwldeaths=torch.cuda.IntTensor(np.zeros(mp.imagesize)), centroids=[])
+    for i in range(fcurrent - finterval + 1, fcurrent + 1):
+        bwoverlap = bwoverlap & manager[i].gpuwormbw
     bwl,nbwl = skimage.measure.label(manager[fcurrent].wormbw, return_num=True)
     # bwp = skimage.measure.regionprops(bwl)
     bwl = torch.cuda.IntTensor(bwl)
