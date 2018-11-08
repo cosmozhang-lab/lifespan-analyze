@@ -50,6 +50,7 @@ class ImageItem:
         self.shifting = None
         self.save_jpeg()
         self.save_buff()
+        self.error = None
 
     def save_jpeg(self):
         if mp.savejpeg:

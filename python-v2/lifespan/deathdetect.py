@@ -20,7 +20,8 @@ class DeathResult:
 def death_judge(manager, fcurrent, finterval, overlap_threshold):
     bwoverlap = torch.cuda.ByteTensor(np.zeros(mp.imagesize)) + 1
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
-        bwoverlap = bwoverlap * manager[i].gpuwormbw
+        if manager[i].error is None:
+            bwoverlap = bwoverlap * manager[i].gpuwormbw
     bwcurrent = manager[fcurrent].gpuwormbw
     bwoverlap = bwoverlap + bwcurrent
     bwoverlap = bwoverlap.type(torch.int32)
@@ -64,7 +65,9 @@ class DeathDetector:
         self.bwdeaths = torch.cuda.ByteTensor(np.zeros(mp.imagesize))
     def step(self, index):
         if index < mp.finterval-1:
-            return
+            return False
+        if self.images[index].error:
+            return False
         dji = death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
         self.bwdeaths = self.bwdeaths | (dji.bwldeaths > 1)
         if index > mp.finterval-1:
@@ -78,3 +81,4 @@ class DeathDetector:
                 centroids = djr.centroids,
                 centroids_origin = dji.centroids
             )
+        return True

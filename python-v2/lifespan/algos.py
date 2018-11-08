@@ -38,4 +38,4 @@ def torch_bwcentroid(bw, coors=None):
     bw = bw > 0
     numelems = torch.sum(bw)
     bw = bw.type(torch.float32)
-    return tuple([(float(torch.sum(bw * cooritem)) / numelems) for cooritem in coors])
+    return tuple([(float(torch.sum(bw * cooritem)) / float(numelems)) for cooritem in coors])

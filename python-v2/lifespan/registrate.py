@@ -7,6 +7,7 @@ def plate_centroid(image, coors):
     bw = (image >= mp.plate_threshold).astype(np.uint8)
     # find max-area region
     bwl,nbwl = skimage.measure.label(bw, return_num=True)
+    if nbwl == 0: return None, None
     bwp = skimage.measure.regionprops(bwl)
     bwa = [x.area for x in bwp]
     maxlabel, maxarea = (0, 0)
@@ -38,9 +39,15 @@ class Registrator:
         self.images = images
         self.c0 = None
     def step(self, index):
+        if self.images[index].error:
+            return False
         ci, bw = plate_centroid(self.images[index].image, self.images.coors)
-        if index == 0: self.c0 = ci
+        if bw is None:
+            self.images[index].error = ValueError("cannot detect a plate")
+            return False
+        if self.c0 is None: self.c0 = ci
         self.images[index].shifting = self.c0 - ci
         self.images[index].image[bw==0] = 0
         self.images[index].image = shift_image(self.images[index].image, self.images[index].shifting)
         self.images[index].gpuimage = torch.cuda.ByteTensor(self.images[index].image)
+        return True

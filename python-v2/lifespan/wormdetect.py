@@ -32,6 +32,9 @@ class WormDetector:
     def __init__(self, images):
         self.images = images
     def step(self, index):
+        if self.images[index].error:
+            return False
         gpuwormbw = detect_worm_2d(self.images[index].gpuimage)
         self.images[index].gpuwormbw = gpuwormbw
         self.images[index].wormbw = gpuwormbw.cpu().numpy()
+        return True
