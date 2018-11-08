@@ -2,6 +2,7 @@ import cv2
 import os
 from . import mainparams as mp
 from .utils import datetime_regfmt, parse_datetime
+from .algos import make_coors
 
 class FileItem:
     def __init__(self, rootdir, subdir, plate, filename):
@@ -49,13 +50,14 @@ class ImageItem:
         self.shifting = None
 
 class ImageManager:
-    def __init__(self, plate=None, ifile0=mp.ifile0, nfiles=mp.nfiles, backward=0, forward=0):
+    def __init__(self, plate=None, ifile0=mp.ifile0, nfiles=mp.nfiles, imagesize=mp.imagesize, backward=0, forward=0):
         self.plate = plate
         self.filelist = get_file_list(self.plate)[ifile0:(ifile0+nfiles)]
         self.backward = backward
         self.forward = forward
         self.imgbuff = [None for i in range(self.buffsize)]
         self.current = 0
+        self.coors = make_coors(imagesize)
 
     @property
     def buffsize(self):

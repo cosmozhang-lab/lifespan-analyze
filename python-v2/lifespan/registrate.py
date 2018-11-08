@@ -1,10 +1,9 @@
 from . import mainparams as mp
-from .global_vars import global_vars as gv
 import numpy as np, torch
 import skimage
-from .algos import fill_holes, make_coors, torch_bwcentroid
+from .algos import fill_holes, torch_bwcentroid
 
-def plate_centroid(image):
+def plate_centroid(image, coors):
     bw = (image >= mp.plate_threshold).astype(np.uint8)
     # find max-area region
     bwl,nbwl = skimage.measure.label(bw, return_num=True)
@@ -20,7 +19,7 @@ def plate_centroid(image):
     bw = fill_holes(bw)
     # determine the centroid
     tgbw = torch.Tensor(bw).cuda()
-    centroid = torch_bwcentroid(tgbw, gv.coors)
+    centroid = torch_bwcentroid(tgbw, coors)
     return np.array(centroid).astype(np.int32), bw
 
 # shifting: (y, x)
@@ -39,7 +38,7 @@ class Registrator:
         self.images = images
         self.c0 = None
     def step(self, index):
-        ci, bw = plate_centroid(self.images[index].image)
+        ci, bw = plate_centroid(self.images[index].image, self.images.coors)
         if index == 0: self.c0 = ci
         self.images[index].shifting = self.c0 - ci
         self.images[index].image[bw==0] = 0

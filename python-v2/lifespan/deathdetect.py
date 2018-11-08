@@ -1,5 +1,4 @@
 from . import mainparams as mp
-from .global_vars import global_vars as gv
 import numpy as np, cv2, torch
 import skimage
 from .algos import make_coors, torch_bwcentroid
@@ -20,7 +19,6 @@ class DeathResult:
 
 def death_judge(manager, fcurrent, finterval, overlap_threshold):
     bwoverlap = torch.cuda.ByteTensor(np.zeros(mp.imagesize)) + 1
-    img = np.zeros([6680,6680,3])
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
         bwoverlap = bwoverlap * manager[i].gpuwormbw
     bwcurrent = manager[fcurrent].gpuwormbw
@@ -36,14 +34,14 @@ def death_judge(manager, fcurrent, finterval, overlap_threshold):
         label = i + 1
         bwregion = (bwl == label).type(torch.int32)
         area_ratio = float(torch.sum(bwregion * bwoverlap == 2)) / float(torch.sum(bwregion))
-        centroid = torch_bwcentroid(bwregion, gv.coors)
+        centroid = torch_bwcentroid(bwregion, manager.coors)
         if area_ratio > overlap_threshold:
             numdeaths += 1
             bwldeaths = bwldeaths + bwregion * numdeaths
             centroids.append(centroid)
     return DeathJudgement(numdeaths=numdeaths, bwldeaths=bwldeaths, centroids=centroids)
 
-def death_select(bwldeaths1, bwldeaths2, overlap_threshold):
+def death_select(manager, bwldeaths1, bwldeaths2, overlap_threshold):
     bwunion = (bwldeaths1 > 0) + (bwldeaths2 > 0)
     numdeaths = 0
     bwldeaths = torch.cuda.IntTensor(np.zeros(tuple(bwunion.shape)))
@@ -53,7 +51,7 @@ def death_select(bwldeaths1, bwldeaths2, overlap_threshold):
         bwregion = (bwldeaths2 == i + 1)
         bwregion_overlap = bwregion * bwunion
         area_ratio = float(torch.sum(bwregion_overlap == 2)) / float(torch.sum(bwregion))
-        centroid = torch_bwcentroid(bwregion, gv.coors)
+        centroid = torch_bwcentroid(bwregion, manager.coors)
         if area_ratio < overlap_threshold:
             numdeaths += 1
             bwldeaths = bwldeaths + bwregion.type(torch.int32) * numdeaths
@@ -67,17 +65,12 @@ class DeathDetector:
     def step(self, index):
         if index < mp.finterval-1:
             return
-        from .utils import ts, te
-        ts();
         dji = death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
-        te(1);
         self.bwdeaths = self.bwdeaths | (dji.bwldeaths > 1)
-        te(2);
         if index > mp.finterval-1:
-            djr = death_select(self.bwdeaths, dji.bwldeaths, mp.death_overlap_threshold_for_selecting)
+            djr = death_select(self.images, self.bwdeaths, dji.bwldeaths, mp.death_overlap_threshold_for_selecting)
         else:
             djr = dji
-        te(3);
         self.images[index].death = DeathResult(
                 numdeaths = djr.numdeaths,
                 bwdeaths = None, # (djr.bwldeaths > 0).cpu().numpy(),
@@ -85,4 +78,3 @@ class DeathDetector:
                 centroids = djr.centroids,
                 centroids_origin = dji.centroids
             )
-        te(4);

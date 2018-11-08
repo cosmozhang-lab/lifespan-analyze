@@ -21,7 +21,7 @@ class Analyzer:
     def prepare(self):
         self.images.init(-1)
         self.nextstep = 0
-        # self.prgbar = ProgressBar(maxval=len(self.images))
+        self.prgbar = ProgressBar(maxval=len(self.images))
     def step(self):
         index = self.nextstep
         if self.prgbar: self.prgbar.update(index+1, "loading")
