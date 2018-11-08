@@ -48,6 +48,24 @@ class ImageItem:
         self.gpuwormbw = None
         self.death = None
         self.shifting = None
+        self.save_jpeg()
+        self.save_buff()
+
+    def save_jpeg(self):
+        if mp.savejpeg:
+            buffdir = mp.buffdir
+            buffdir = os.path.join(buffdir, self.plate)
+            if not os.path.isdir(buffdir): os.mkdir(buffdir)
+            bufffile = os.path.join(buffdir, self.subdir + ".jpg")
+            cv2.imwrite(bufffile, self.image, [cv2.IMWRITE_JPEG_QUALITY,20])
+
+    def save_buff(self):
+        if mp.savebuff:
+            buffdir = mp.buffdir
+            buffdir = os.path.join(buffdir, self.plate)
+            if not os.path.isdir(buffdir): os.mkdir(buffdir)
+            bufffile = os.path.join(buffdir, self.subdir + mp.imgsuffix)
+            cv2.imwrite(bufffile, self.image)
 
 class ImageManager:
     def __init__(self, plate=None, ifile0=mp.ifile0, nfiles=mp.nfiles, imagesize=mp.imagesize, backward=0, forward=0):

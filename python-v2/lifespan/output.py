@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.io import savemat
 import os
+from . import mainparams as mp
 
 class SummaryItem:
     def __init__(self):
@@ -27,8 +28,8 @@ class SummaryCollector:
         outdata["nfiles"] = len(self.images)
         outdata["plate"] = self.plate
         outdata["numdeaths"] = np.array([item.numdeaths for item in self.stpouts])
-        outdata["centroids"] = np.array([item.centroids for item in self.stpouts], np.object)
-        outdata["oricentroids"] = np.array([item.centroids_origin for item in self.stpouts], np.object)
+        outdata["centroids"] = np.array([np.array(item.centroids) for item in self.stpouts], np.object)
+        outdata["oricentroids"] = np.array([np.array(item.centroids_origin) for item in self.stpouts], np.object)
         outdata["dirnames"] = np.array([item.subdir for item in self.stpouts], np.object)
         outdata["imshifts"] = np.array([item.shifting for item in self.stpouts])
         # write result
