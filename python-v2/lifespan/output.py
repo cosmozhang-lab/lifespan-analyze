@@ -19,7 +19,7 @@ class SummaryCollector:
     def step(self, index):
         self.stpouts[index] = SummaryItem()
         self.stpouts[index].subdir = self.images[index].subdir
-        self.stpouts[index].shifting = self.images[index].shifting
+        self.stpouts[index].shifting = self.images[index].shifting if not self.images[index].shifting is None else (np.nan, np.nan)
         self.stpouts[index].numdeaths = self.images[index].death.numdeaths if not self.images[index].death is None else np.nan
         self.stpouts[index].centroids = self.images[index].death.centroids if not self.images[index].death is None else []
         self.stpouts[index].centroids_origin = self.images[index].death.centroids_origin if not self.images[index].death is None else []

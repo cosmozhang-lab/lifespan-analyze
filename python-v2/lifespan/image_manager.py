@@ -27,7 +27,7 @@ def get_file_list(plate):
         list(map(
             lambda xx: (lambda y: FileItem(mp.rootdir, xx, plate, y[0]) if len(y) > 0 else None)(
                 list(filter(
-                    lambda xxx: xxx.split(".")[0] == mp.plate,
+                    lambda xxx: xxx.split(".")[0] == plate,
                     os.listdir(os.path.join(mp.rootdir, xx))
                 ))
             ),
@@ -57,6 +57,8 @@ class ImageItem:
             buffdir = mp.buffdir
             buffdir = os.path.join(buffdir, self.plate)
             if not os.path.isdir(buffdir): os.mkdir(buffdir)
+            buffdir = os.path.join(buffdir, "jpeg")
+            if not os.path.isdir(buffdir): os.mkdir(buffdir)
             bufffile = os.path.join(buffdir, self.subdir + ".jpg")
             cv2.imwrite(bufffile, self.image, [cv2.IMWRITE_JPEG_QUALITY,20])
 
@@ -64,6 +66,8 @@ class ImageItem:
         if mp.savebuff:
             buffdir = mp.buffdir
             buffdir = os.path.join(buffdir, self.plate)
+            if not os.path.isdir(buffdir): os.mkdir(buffdir)
+            buffdir = os.path.join(buffdir, "buff")
             if not os.path.isdir(buffdir): os.mkdir(buffdir)
             bufffile = os.path.join(buffdir, self.subdir + mp.imgsuffix)
             cv2.imwrite(bufffile, self.image)
@@ -96,15 +100,15 @@ class ImageManager:
         self.current = pos
 
     def prev(self):
+        self.current -= 1
         newitem = self.current - self.backward
         newitem = None if newitem < 0 else ImageItem(self.filelist[newitem])
         self.imgbuff = [newitem] + self.imgbuff[:-1]
-        self.current -= 1
     def next(self):
+        self.current += 1
         newitem = self.current + self.forward
         newitem = None if newitem >= self.length else ImageItem(self.filelist[newitem])
         self.imgbuff = self.imgbuff[1:] + [newitem]
-        self.current += 1
 
     def __len__(self):
         return len(self.filelist)

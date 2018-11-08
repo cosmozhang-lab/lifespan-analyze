@@ -10,6 +10,7 @@ numalive = numalive(end) - numalive;
 
 figure(1);
 plot(numalive);
+grid on;
 
 % % You may need to BREAK here
 % figure(2);
