@@ -11,7 +11,9 @@ mp.nfiles = 105
 mp.immediate = False
 mp.verbose = 5
 mp.outdir = "/disk1/home/cosmo/downloads"
-mp.startstep = mp.startstep
 mp.savebuff = False
 mp.savejpeg = False
 mp.savesteps = False
+
+# these should not be overrided here
+mp.finterval = 3
