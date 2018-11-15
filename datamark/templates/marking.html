@@ -52,6 +52,11 @@ Data Mark
 .mode-bar .mode-item.mode-item-colored {
     text-shadow: 0 0 1px white;
 }
+.mode-bar .mode-item.mode-item-colored .plain-text {
+    text-shadow: none;
+    color: #cccccc;
+    font-size: 12px;
+}
 
 .image-wrapper {
     width: 100%;
@@ -123,13 +128,46 @@ Data Mark
     padding-top: 5px;
     padding-bottom: 5px;
 }
+
+.bar-collapse-button-wrapper {
+    height: 0;
+    overflow: visible;
+    position: relative;
+}
+.bar-collapse-button {
+    display: block;
+    position: absolute;
+    width: 60px;
+    height: 20px;
+    left: 50%;
+    margin-left: -30px;
+    line-height: 20px;
+    font-size: 12px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #999;
+    text-align: center;
+}
+.bar-collapse-button:hover {
+    background-color: #cccccc99;
+}
+.bar-collapse-button.uncollapse {
+    top: 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.bar-collapse-button.collapse {
+    bottom: 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
 </style>
 {% endblock %}
 
 {% block main %}
 {% include "authbar.html" %}
 {% verbatim %}
-<div class="row" style="margin-top: 20px">
+<div class="row" id="progressbar-container" style="margin-top: 20px">
     <div class="col-sm-2">
         <span>Dataset: </span>
         <b>{{ setname }}</b>
@@ -148,6 +186,10 @@ Data Mark
             <span>marked</span>
         </span>
     </div>
+</div>
+<div class="bar-collapse-button-wrapper">
+    <div class="bar-collapse-button uncollapse" id="bar-uncollapse-button" v-on:click="uncollapseBar"><span class="fa fa-angle-double-down"></span></div>
+    <div class="bar-collapse-button collapse" id="bar-collapse-button" v-on:click="collapseBar"><span class="fa fa-angle-double-up"></div>
 </div>
 <div class="row" style="margin-top: 20px">
     <div class="col-sm-4">
@@ -185,30 +227,40 @@ Data Mark
         <div class="mode-bar" v-show="viewer.mode == 'mark'" style="margin-left: 20px;">
             <!-- followings are the mark mode selections -->
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="top" title="Worm"
-                style="color: #3399FF"
+                data-toggle="tooltip" data-placement="bottom" title="Worm"
                 v-on:click="toggleMarkMode('target')"
-                v-bind:class="{ active: (viewer.markmode == 'target') }">W</span>
+                v-bind:class="{ active: (viewer.markmode == 'target') }">
+                <span style="color: #3399FF">W</span>
+                <span class="plain-text" v-show='sample.markcounts["target"]'>&nbsp;({{sample.markcounts["target"]}})</span>
+            </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="top" title="False"
-                style="color: #FF6666"
+                data-toggle="tooltip" data-placement="bottom" title="False"
                 v-on:click="toggleMarkMode('mistake')"
-                v-bind:class="{ active: (viewer.markmode == 'mistake') }">F</span>
+                v-bind:class="{ active: (viewer.markmode == 'mistake') }">
+                <span style="color: #FF6666">F</span>
+                <span class="plain-text" v-show='sample.markcounts["mistake"]'>&nbsp;({{sample.markcounts["mistake"]}})</span>
+            </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="top" title="Unknown"
-                style="color: #FF66FF"
+                data-toggle="tooltip" data-placement="bottom" title="Unknown"
                 v-on:click="toggleMarkMode('unknown')"
-                v-bind:class="{ active: (viewer.markmode == 'unknown') }">U</span>
+                v-bind:class="{ active: (viewer.markmode == 'unknown') }">
+                <span style="color: #FF66FF">U</span>
+                <span class="plain-text" v-show='sample.markcounts["unknown"]'>&nbsp;({{sample.markcounts["unknown"]}})</span>
+            </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="top" title="Blank"
-                style="color: #FFCC00"
+                data-toggle="tooltip" data-placement="bottom" title="Blank"
                 v-on:click="toggleMarkMode('blank')"
-                v-bind:class="{ active: (viewer.markmode == 'blank') }">B</span>
+                v-bind:class="{ active: (viewer.markmode == 'blank') }">
+                <span style="color: #FFCC00">B</span>
+                <span class="plain-text" v-show='sample.markcounts["blank"]'>&nbsp;({{sample.markcounts["blank"]}})</span>
+            </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="top" title="Delete"
-                style="color: #FFFFFF"
+                data-toggle="tooltip" data-placement="bottom" title="Delete"
                 v-on:click="toggleMarkMode('delete')"
-                v-bind:class="{ active: (viewer.markmode == 'delete') }">X</span>
+                v-bind:class="{ active: (viewer.markmode == 'delete') }">
+                <span style="color: #FFFFFF">X</span>
+                <span class="plain-text" v-show='sample.markcounts["delete"]'>&nbsp;({{sample.markcounts["delete"]}})</span>
+            </span>
         </div>
     </div>
 </div>
@@ -267,7 +319,8 @@ var vue = new Vue({
             marks: [],
             originmarks: null,
             activeMark: { type: null, show: false, x: 0, y: 0, width: 0, height: 0 },
-            marksize: { width: 0, height: 0 }
+            marksize: { width: 0, height: 0 },
+            markcounts: { target: 0, mistake: 0, unknown: 0, blank: 0, delete: 0 }
         },
         preload: true,
         preloadsample: {
@@ -592,6 +645,7 @@ var vue = new Vue({
                             that.updateStatistics();
                             status_loading(false);
                         }
+                        that.updateCounts();
                     });
                 }
             }
@@ -660,6 +714,7 @@ var vue = new Vue({
                     that.sample.activeMark.show = false;
                     that.sample.image.src = data.imgsrc;
                     that.sample.marksize = data.marksize;
+                    that.updateCounts();
                     if (callback) callback(true);
                 } else {
                     messagebox("Marking", "Cannot load this sample. Because: " + data.reason);
@@ -695,6 +750,27 @@ var vue = new Vue({
                 }
             });
             return true;
+        },
+        uncollapseBar: function () {
+            $("#authbar-container, #progressbar-container").show();
+            $("#bar-uncollapse-button").hide();
+            $("#bar-collapse-button").show();
+            window.localStorage["barcollapse"] = "uncollapsed";
+        },
+        collapseBar: function () {
+            $("#authbar-container, #progressbar-container").hide();
+            $("#bar-uncollapse-button").show();
+            $("#bar-collapse-button").hide();
+            window.localStorage["barcollapse"] = "collapsed";
+        },
+        updateCounts: function () {
+            var that = this;
+            var markcounts = {};
+            for (var i = 0; i < that.sample.marks.length; i++) {
+                var markitem = that.sample.marks[i];
+                markcounts[markitem.type] = (markcounts[markitem.type] || 0) + 1;
+            }
+            that.sample.markcounts = markcounts;
         }
     },
     computed: {
@@ -884,6 +960,7 @@ var vue = new Vue({
                         var markitem = that.hoverMark(event);
                         if (markitem) markitem.deleted = true;
                     }
+                    that.updateCounts();
                 }
             });
             (function () {
@@ -906,6 +983,8 @@ var vue = new Vue({
             $(document).on('click', function(event) {
                 if ($(event.target).closest('.searchbox,.searchbar-trigger').length == 0) vue.hideSearchbar();
             });
+            if (window.localStorage["barcollapse"] == "collapsed") vue.collapseBar();
+            else vue.uncollapseBar();
         });
         // this.sample.image.src = "/static/runtime/sample.jpg";
         // status_loading(false);
@@ -932,6 +1011,7 @@ var vue = new Vue({
                                 that.sample.activeMark.show = false;
                                 that.sample.image.src = data.imgsrc;
                                 that.sample.marksize = data.marksize;
+                                that.updateCounts();
                             } else {
                                 messagebox("Marking", "Cannot load the sample. Because: " + data.reason);
                             }
@@ -952,6 +1032,7 @@ var vue = new Vue({
                             that.sample.activeMark.show = false;
                             that.sample.image.src = data.imgsrc;
                             that.sample.marksize = data.marksize;
+                            that.updateCounts();
                         } else {
                             messagebox("Marking", "Cannot load new sample. Because: " + data.reason);
                         }
