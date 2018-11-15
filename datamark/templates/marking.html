@@ -769,7 +769,7 @@ var vue = new Vue({
         }
         var finalpath = window.location.uri.split("/");
         finalpath = finalpath[finalpath.length-1];
-        that.rank = get_rank_item(window.location.query.rank || (finalpath == "reviewing" ? "ascending" : "descending"));
+        that.rank = get_rank_item(window.location.query.rank || (finalpath == "reviewing" ? "ascending" : "random"));
         that.reviewing.reviewing = (finalpath == "reviewing");
         $(function () {
             that.viewer.el = $('#image-wrapper');
