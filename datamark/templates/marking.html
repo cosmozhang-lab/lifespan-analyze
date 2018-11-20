@@ -368,8 +368,9 @@ var vue = new Vue({
             this.viewer.pressmoved = false;
             this.viewer.zoomframe.show = false;
         },
-        toggleMode: function (modename) {
-            if (this.viewer.mode == modename) {
+        toggleMode: function (modename, force_set) {
+            var unset = (typeof force_set === "boolean") ? (!force_set) : (this.viewer.mode == modename);
+            if (unset) {
                 this.viewer.mode = null;
                 this.clearMouse();
             } else {
@@ -377,8 +378,9 @@ var vue = new Vue({
                 this.clearMouse();
             }
         },
-        toggleMarkMode: function (modename) {
-            if (this.viewer.markmode == modename) {
+        toggleMarkMode: function (modename, force_set) {
+            var unset = (typeof force_set === "boolean") ? (!force_set) : (this.viewer.markmode == modename);
+            if (unset) {
                 this.viewer.markmode = null;
                 this.clearMouse();
             } else {
@@ -413,9 +415,11 @@ var vue = new Vue({
                 });
             }
         },
-        clickZoom: function (event) {
+        clickZoom: function (event, options) {
             // clicking zoom in/out
-            var s = (this.viewer.mode == "zoomout") ? 0.8 : 1.25;
+            options = options || {};
+            var s = options.s;
+            if (s === undefined) s = (this.viewer.mode == "zoomout") ? 0.8 : 1.25;
             var wrapperpos = this.viewer.el.offset();
             var wrapperx = wrapperpos.left - $(window).scrollLeft();
             var wrappery = wrapperpos.top - $(window).scrollTop();
@@ -923,6 +927,21 @@ var vue = new Vue({
             $(".image-wrapper").on('mouseout', function(event) {
                 that.sample.activeMark.show = false;
             });
+            // detect wheel events and zoom
+            (function() {
+                var timing = 0;
+                $(".image-wrapper").on('mousewheel', function(event) {
+                    var now = new Date().getTime();
+                    if (now - timing > 50) {
+                        timing = now;
+                        if (that.viewer.mode === "pan") {
+                            var s = ((event.originalEvent.wheelDelta > 0) ? 1.5 : 0.67);
+                            that.clickZoom(event, {s:s});
+                        }
+                    }
+                });
+            })();
+            // detect mouse up events and clear the mouse status
             $(document).on('mouseup', function(event) {
                 that.clearMouse();
             });
@@ -963,6 +982,59 @@ var vue = new Vue({
                     that.updateCounts();
                 }
             });
+            // detect shortcut keys
+            (function () {
+                var keycodes = {};
+                for (var i = 65; i <= 90; i++) keycodes[String.fromCharCode(i)] = i;
+                var keyupZtimer = undefined;
+                var keypressingZ = false;
+                // $(window).on("keydown", function(event) {
+                //     if (event.keyCode == keycodes.Z) {
+                //         if (!keypressingZ) {
+                //             keypressingZ = true;
+                //             if (keyupZtimer === undefined) {
+                //                 that.toggleMode("pan", true);
+                //             }
+                //         }
+                //     }
+                // });
+                $(window).on("keyup", function(event) {
+                    if (event.keyCode == keycodes.Z) {
+                        if (keyupZtimer === undefined) {
+                            // first press
+                            keyupZtimer = setTimeout(function() {
+                                keyupZtimer = undefined;
+                                keypressingZ = false;
+                                that.toggleMode("zoomin", true);
+                            }, 200);
+                        } else {
+                            // second press
+                            keypressingZ = false;
+                            clearTimeout(keyupZtimer);
+                            keyupZtimer = undefined;
+                            that.toggleMode("zoomout", true);
+                        }
+                    } else if (event.keyCode == keycodes.A || event.keyCode == keycodes.Q) {
+                        that.toggleMode("pan", true);
+                    } else if (event.keyCode == keycodes.W) {
+                        that.toggleMode("mark", true);
+                        that.toggleMarkMode("target", true);
+                    } else if (event.keyCode == keycodes.E || event.keyCode == keycodes.F) {
+                        that.toggleMode("mark", true);
+                        that.toggleMarkMode("false", true);
+                    } else if (event.keyCode == keycodes.R || event.keyCode == keycodes.U) {
+                        that.toggleMode("mark", true);
+                        that.toggleMarkMode("unknown", true);
+                    } else if (event.keyCode == keycodes.T || event.keyCode == keycodes.B) {
+                        that.toggleMode("mark", true);
+                        that.toggleMarkMode("blank", true);
+                    } else if (event.keyCode == keycodes.D || event.keyCode == keycodes.X) {
+                        that.toggleMode("mark", true);
+                        that.toggleMarkMode("delete", true);
+                    }
+                });
+            })();
+            // detect image wrapper resizing and reset the viewer size
             (function () {
                 var wrapperEl = $("#image-wrapper");
                 var wrapperW = parseInt(wrapperEl.width());
