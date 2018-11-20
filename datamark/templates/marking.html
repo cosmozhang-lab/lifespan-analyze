@@ -219,43 +219,63 @@ Data Mark
     </div>
     <div class="col-sm-6 mode-bar-wrapper">
         <div class="mode-bar">
-            <span class="mode-item" v-on:click="toggleMode('zoomin')"  v-bind:class="{ active: (viewer.mode == 'zoomin') }"  ><i class="fa fa-search-plus"></i></span>
-            <span class="mode-item" v-on:click="toggleMode('zoomout')" v-bind:class="{ active: (viewer.mode == 'zoomout') }" ><i class="fa fa-search-minus"></i></span>
-            <span class="mode-item" v-on:click="toggleMode('pan')"     v-bind:class="{ active: (viewer.mode == 'pan') }"     ><i class="fa fa-arrows-alt"></i></span>
-            <span class="mode-item" v-on:click="toggleMode('mark')"    v-bind:class="{ active: (viewer.mode == 'mark') }"    ><i class="fa fa-marker"></i></span>
+            <span class="mode-item"
+                data-toggle="tooltip" data-placement="bottom" title="Zoom-In (Z)"
+                v-on:click="toggleMode('zoomin')"
+                v-bind:class="{ active: (viewer.mode == 'zoomin') }">
+                <i class="fa fa-search-plus"></i>
+            </span>
+            <span class="mode-item"
+                data-toggle="tooltip" data-placement="bottom" title="Zoom-Out (Z,Z)"
+                v-on:click="toggleMode('zoomout')"
+                v-bind:class="{ active: (viewer.mode == 'zoomout') }">
+                <i class="fa fa-search-minus"></i>
+            </span>
+            <span class="mode-item"
+                data-toggle="tooltip" data-placement="bottom" title="Pan (Q)"
+                v-on:click="toggleMode('pan')"
+                v-bind:class="{ active: (viewer.mode == 'pan') }">
+                <i class="fa fa-arrows-alt"></i>
+            </span>
+            <span class="mode-item"
+                data-toggle="tooltip" data-placement="bottom" title="Mark"
+                v-on:click="toggleMode('mark')"
+                v-bind:class="{ active: (viewer.mode == 'mark') }">
+                <i class="fa fa-marker"></i>
+            </span>
         </div>
         <div class="mode-bar" v-show="viewer.mode == 'mark'" style="margin-left: 20px;">
             <!-- followings are the mark mode selections -->
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="bottom" title="Worm"
+                data-toggle="tooltip" data-placement="bottom" title="Worm (W)"
                 v-on:click="toggleMarkMode('target')"
                 v-bind:class="{ active: (viewer.markmode == 'target') }">
                 <span style="color: #3399FF">W</span>
                 <span class="plain-text" v-show='sample.markcounts["target"]'>&nbsp;({{sample.markcounts["target"]}})</span>
             </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="bottom" title="False"
+                data-toggle="tooltip" data-placement="bottom" title="False (E)"
                 v-on:click="toggleMarkMode('mistake')"
                 v-bind:class="{ active: (viewer.markmode == 'mistake') }">
                 <span style="color: #FF6666">F</span>
                 <span class="plain-text" v-show='sample.markcounts["mistake"]'>&nbsp;({{sample.markcounts["mistake"]}})</span>
             </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="bottom" title="Unknown"
+                data-toggle="tooltip" data-placement="bottom" title="Unknown (R)"
                 v-on:click="toggleMarkMode('unknown')"
                 v-bind:class="{ active: (viewer.markmode == 'unknown') }">
                 <span style="color: #FF66FF">U</span>
                 <span class="plain-text" v-show='sample.markcounts["unknown"]'>&nbsp;({{sample.markcounts["unknown"]}})</span>
             </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="bottom" title="Blank"
+                data-toggle="tooltip" data-placement="bottom" title="Blank (T)"
                 v-on:click="toggleMarkMode('blank')"
                 v-bind:class="{ active: (viewer.markmode == 'blank') }">
                 <span style="color: #FFCC00">B</span>
                 <span class="plain-text" v-show='sample.markcounts["blank"]'>&nbsp;({{sample.markcounts["blank"]}})</span>
             </span>
             <span class="mode-item mode-item-colored"
-                data-toggle="tooltip" data-placement="bottom" title="Delete"
+                data-toggle="tooltip" data-placement="bottom" title="Delete (D)"
                 v-on:click="toggleMarkMode('delete')"
                 v-bind:class="{ active: (viewer.markmode == 'delete') }">
                 <span style="color: #FFFFFF">X</span>
@@ -1021,7 +1041,7 @@ var vue = new Vue({
                         that.toggleMarkMode("target", true);
                     } else if (event.keyCode == keycodes.E || event.keyCode == keycodes.F) {
                         that.toggleMode("mark", true);
-                        that.toggleMarkMode("false", true);
+                        that.toggleMarkMode("mistake", true);
                     } else if (event.keyCode == keycodes.R || event.keyCode == keycodes.U) {
                         that.toggleMode("mark", true);
                         that.toggleMarkMode("unknown", true);
