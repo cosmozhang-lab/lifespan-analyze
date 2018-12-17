@@ -16,3 +16,4 @@
 
 # Python junks
 *.pyc
+__pycache__
