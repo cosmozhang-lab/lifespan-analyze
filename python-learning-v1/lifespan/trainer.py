@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
 from .discriminator import WormDiscriminator
+from .torchutils import OneHotTransform
 
 class Trainer:
     def __init__(self, datasetdir, batchsize=32):
@@ -13,7 +14,7 @@ class Trainer:
         self.batchsize = batchsize
         self.dataset = MNIST(datasetdir, download=True,
             transform=transforms.Compose([transforms.ToTensor()]),
-            target_transform=transforms.Compose([transforms.]))
+            target_transform=transforms.Compose([OneHotTransform(10)]))
         self.dataiter = iter(DataLoader(self.dataset, batch_size=32, shuffle=True))
     def train_step(self):
         # TODO
