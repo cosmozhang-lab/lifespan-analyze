@@ -1,8 +1,10 @@
 import os
 from lifespan.trainer import Trainer
+import userconfig
 
-datasetsdir = os.path.join(os.path.dirname(__file__), "datasets")
-if not os.path.exist(datasetsdir): os.mkdir(datasetsdir)
-datasetdir = os.path.join(datasetsdir, "MNIST")
+datasetdir = userconfig.datasetdir
+if not os.path.exists(datasetdir): os.mkdir(datasetdir)
 
-trainer = Trainer(datasetsdir)
+trainer = Trainer(datasetdir, device=userconfig.device)
+
+trainer.train(with_test=True)

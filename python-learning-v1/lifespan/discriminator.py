@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
+from .torchutils import Accuracy
 
 class WormDiscriminator(nn.Module):
     def __init__(self):
@@ -20,6 +21,7 @@ class WormDiscriminator(nn.Module):
         self.nl = functional.relu
         # loss function
         self.loss = nn.CrossEntropyLoss()
+        self.accuracy = Accuracy()
     def forward(self, x):
         y = x
         y = self.conv1(y)
