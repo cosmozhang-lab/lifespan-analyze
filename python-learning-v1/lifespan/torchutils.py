@@ -14,12 +14,20 @@ class OneHotTransform:
         dim = len(shape) - 1
         return torch.zeros(shape).scatter_(dim, inputtensor.type(torch.long), 1)
 
-class Accuracy:
+class ClassifierAccuracy:
     def __init__(self):
         pass
     def __call__(self, logits, target):
         classes = torch.argmax(logits, dim=-1)
         corrects = classes.type(target.type()) == target
+        accuracy = corrects.type(torch.float).mean()
+        return accuracy
+
+class DiscriminatorAccuracy:
+    def __init__(self):
+        pass
+    def __call__(self, score, target):
+        corrects = (score >= 0.5).type(target.type()) == target
         accuracy = corrects.type(torch.float).mean()
         return accuracy
 
