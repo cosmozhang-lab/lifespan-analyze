@@ -98,11 +98,12 @@ class Trainer:
         if not os.path.isdir(dirname): os.makedirs(dirname)
         torch.save(net.state_dict(), filename)
         return filename
-    def load_model(save_name):
+    def load_model(save_name, log=True):
         filepath = save_name + ".model.pkl"
         if not os.path.isfile(filepath):
             raise IOError("model file %s does not exist")
         net = torch.load(filepath)
+        if log: print("load model from %s" % filepath)
         dirname, filename = os.path.split(save_name)
         regexp = re.compile(r"^" + filename + r"\.params\.(\d+)\.pkl$")
         filenames = os.listdir(dirname)
@@ -115,6 +116,7 @@ class Trainer:
             stepid = int(filenames[-1].group(1)) + 1
             filepath = os.path.join(dirname, filename)
             net.load_state_dict(torch.load(filepath))
+            if log: print("load model params from %s" % filepath)
         return (net, stepid)
     def model_exists(save_name):
         filepath = save_name + ".model.pkl"

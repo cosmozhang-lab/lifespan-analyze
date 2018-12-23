@@ -1,6 +1,6 @@
 import os
-from lifespan.trainer import Trainer
-from lifespan.dataset import delete_dataset
+from learning.trainer import Trainer
+from learning.dataset import delete_dataset
 import userconfig
 
 datasetdir = userconfig.datasetdir
