@@ -1,4 +1,7 @@
-import os
+import sys,os
+
+sys.path.append(os.path.realpath(os.path.dirname(__file__)))
+
 from learning.trainer import Trainer
 from learning.dataset import delete_dataset
 import userconfig

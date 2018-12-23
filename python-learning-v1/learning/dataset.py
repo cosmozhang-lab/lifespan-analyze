@@ -3,7 +3,7 @@ from torch.utils.data import Dataset as TorchDataset
 import os
 import numpy as np
 from scipy.io import loadmat, savemat
-from . import mainparams as mp
+import lifespan.mainparams as mp
 import re
 import random
 import shutil
