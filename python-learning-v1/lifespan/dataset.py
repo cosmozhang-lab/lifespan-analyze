@@ -6,6 +6,7 @@ from scipy.io import loadmat, savemat
 from . import mainparams as mp
 import re
 import random
+import shutil
 
 def generate_dataset(fromdir, todir):
     def walk_and_list_files(rootdir, suffix):
@@ -74,6 +75,9 @@ def generate_dataset(fromdir, todir):
         prgbar.update(counter)
         continue
     prgbar.finish()
+
+def delete_dataset(datasetdir):
+    shutil.rmtree(datasetdir)
 
 
 
