@@ -1,5 +1,1 @@
-# Custom
-load_params.m
-*.local.*
-/out
-/figures
+params.m

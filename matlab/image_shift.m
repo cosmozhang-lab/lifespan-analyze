@@ -6,6 +6,7 @@ else
     shifts = [varargin{1}, varargin{2}];
 end
 
+shifts = double(shifts);
 shiftx = shifts(1);
 shifty = shifts(2);
 

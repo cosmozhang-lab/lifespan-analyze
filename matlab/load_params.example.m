@@ -1,1 +1,0 @@
-rootdir = '/store/Data/lifespan-20180718';
