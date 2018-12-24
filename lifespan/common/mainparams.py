@@ -12,5 +12,5 @@ worm_threshold = 90
 localthreshold_size = (257, 257)
 death_overlap_threshold = 0.7
 death_overlap_threshold_for_selecting = 0.5
-finterval = 8
+finterval = 24
 dnn_discriminate = True
