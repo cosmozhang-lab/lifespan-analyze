@@ -3,7 +3,7 @@
 #from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
-from utils.files import FileFinder, FileItem
+from lifespan.common.files import FileFinder, FileItem
 from mainapp.models import Dataset, Sample
 from .login import authbar, getuser, redirectLogin
 

@@ -47,8 +47,15 @@ class Discriminator(nn.Module):
         y = torch.sigmoid(y)
         return y
     def predict(self, x, score_th=0.5):
+        if len(x.shape) == 3:
+            singlebatch = True
+            x = x.view([1]+list(x.shape))
+        else:
+            singlebatch = False
         y = self.forward(x)
         label = (y > float(score_th))
+        if singlebatch:
+            y = y.view(list(y.shape)[1:])
         return label
     def requires_grad_(self, requires_grad=True):
         for parameter in self.parameters():

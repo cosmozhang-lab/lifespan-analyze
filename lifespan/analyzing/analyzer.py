@@ -6,7 +6,7 @@ from .wormdetect import WormDetector
 from .deathdetect import DeathDetector
 from .output import SummaryCollector
 
-from .utils import ProgressBar
+from lifespan.common.utils import ProgressBar
 
 class Analyzer:
     def __init__(self, rootdir=None, outdir=None, plate=None, ifile0=0, nfiles=None, save_jpeg=False, save_buff=False):

@@ -1,7 +1,7 @@
-import cv2
 import os
+import cv2, torch
 import lifespan.common.mainparams as mp
-from .utils import datetime_regfmt, parse_datetime
+from lifespan.common.utils import datetime_regfmt, parse_datetime
 from lifespan.common.algos import make_coors
 
 class FileItem:
@@ -48,6 +48,7 @@ class ImageItem:
         self.gpuwormbw = None
         self.death = None
         self.shifting = None
+        self.wormcentroids = None
         self.buffdir = buffdir
         self.save_jpeg_flag = (not buffdir is None) and save_jpeg
         self.save_buff_flag = (not buffdir is None) and save_buff
@@ -87,7 +88,7 @@ class ImageManager:
         self.forward = forward
         self.imgbuff = [None for i in range(self.buffsize)]
         self.current = 0
-        self.coors = make_coors(mp.imagesize)
+        self.coors = make_coors(size=mp.imagesize, engine=torch, device="cuda")
 
     @property
     def buffsize(self):

@@ -16,7 +16,10 @@ class Trainer:
         self.epochid = 0
         self.net = Discriminator()
         if load_model:
-            self.stepid, self.epochid = Trainer.load_model_params(self.net, load_model)
+            if Trainer.model_param_exists(load_model):
+                self.stepid, self.epochid = Trainer.load_model_params(self.net, load_model)
+            elif not soft_load:
+                raise IOError("model params %s does not exist" % load_model)
         self.device = torch.device(device)
         self.net.to(self.device)
         print("Using device:", self.device)
@@ -121,6 +124,17 @@ class Trainer:
     def model_exists(save_name):
         filepath = save_name + ".model.pkl"
         if not os.path.isfile(filepath):
+            return False
+        return True
+    def model_param_exists(save_name):
+        dirname, filename = os.path.split(save_name)
+        if not os.path.isdir(dirname):
+            return False
+        regexp = re.compile(r"^" + filename + r"\.params\.(\d+)\.pkl$")
+        filenames = os.listdir(dirname)
+        filenames = list(map(lambda item: re.match(regexp, item), filenames))
+        filenames = list(filter(lambda item: not item is None, filenames))
+        if len(filenames) == 0:
             return False
         return True
     def clear_model(save_name):

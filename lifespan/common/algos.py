@@ -27,14 +27,27 @@ def torch_bwopen(bw, stel):
     bw = bw.reshape(list(bw.shape[-2:])).type(torch.uint8)
     return bw
 
-def make_coors(image_size):
-    coory = torch.cuda.FloatTensor(np.repeat(np.arange(image_size[0]).reshape([image_size[0],1]), image_size[1], 1))
-    coorx = torch.cuda.FloatTensor(np.repeat(np.arange(image_size[1]).reshape([1,image_size[1]]), image_size[0], 0))
+def make_coors(size=None, engine=np, device="cpu", image=None):
+    if not image is None:
+        if isinstance(image, np.ndarray): engine = np
+        elif isinstance(image, torch.Tensor): engine = torch
+        else: raise ValueError("unrecoginized image")
+        if engine == torch: device = image.device
+        size = tuple(image.shape)
+    else:
+        if size is None:
+            raise ValueError("image size is not specified")
+    coory = np.repeat(np.arange(size[0]).reshape([size[0],1]), size[1], 1).astype(np.float)
+    coorx = np.repeat(np.arange(size[1]).reshape([1,size[1]]), size[0], 0).astype(np.float)
+    if engine == torch:
+        device = torch.device(device)
+        coorx = torch.FloatTensor(coorx).to(device)
+        coory = torch.FloatTensor(coory).to(device)
     return (coory, coorx)
 
 def torch_bwcentroid(bw, coors=None):
     if coors is None:
-        coors = make_coors(tuple(bw.shape))
+        coors = make_coors(image=bw)
     bw = bw > 0
     numelems = torch.sum(bw)
     bw = bw.type(torch.float32)

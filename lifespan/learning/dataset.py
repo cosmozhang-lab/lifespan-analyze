@@ -4,9 +4,73 @@ import os
 import numpy as np
 from scipy.io import loadmat, savemat
 import lifespan.common.mainparams as mp
+from lifespan.common.algos import make_coors
+from lifespan.common.geo import Rect
 import re
 import random
 import shutil
+
+def prepare_image(image, bwlworms, regions=None, regionids=None, coors=None):
+    class ImagePiece:
+        def __init__(self, wid, data):
+            self.wid = wid
+            self.data = data
+    if regions is None or regionids is None:
+        if coors is None:
+            coors = make_coors(image=bwlworms)
+    regions_given = not regions is None and not regionids is None
+    nbwl = len(regionids) if regions_given else bwlworms.max()
+    if isinstance(image, np.ndarray): fimage = image.astype(np.float)
+    elif isinstance(image, torch.Tensor): fimage = image.type(torch.float)
+    fplatepxs = fimage[fimage>mp.plate_threshold]
+    if len(fplatepxs) == 0: return []
+    imgmean = fplatepxs.mean()
+    imgstd = fplatepxs.std()
+    piece_datas = []
+    for i in range(nbwl):
+        if not regions_given:
+            label = i + 1
+            bw = (bwlworms == label)
+            if isinstance(bw, np.ndarray): fbw = bw.astype(np.float)
+            elif isinstance(bw, torch.Tensor): fbw = bw.type(torch.float)
+            coorx = fbw * coors[1]
+            coory = fbw * coors[0]
+            maxcoorx = int(coorx.max())
+            maxcoory = int(coory.max())
+            coorx[coorx == 0] = mp.imagesize[1]
+            coory[coory == 0] = mp.imagesize[0]
+            mincoorx = int(coorx.min())
+            mincoory = int(coory.min())
+            rx = mincoorx
+            ry = mincoory
+            rw = maxcoorx - mincoorx + 1
+            rh = maxcoory - mincoory + 1
+            rid = label
+        else:
+            rx,ry,rw,rh = tuple(regions[i,:])
+            rid = int(regionids[i])
+        mw,mh = mp.marksize
+        imw,imh = mp.imagesize
+        if rw < mw: rx = min(imw-mw, max(0, int(rx-(mw-rw)/2)))
+        if rh < mh: ry = min(imh-mh, max(0, int(ry-(mh-rh)/2)))
+        if rw > mw or rh > mh:
+            piece_datas.append(None)
+            continue
+        img_piece = image[ry:ry+mh, rx:rx+mw]
+        bw_piece = (bwlworms[ry:ry+mh, rx:rx+mw] == rid)
+        if isinstance(image, np.ndarray):
+            img_piece = img_piece.astype(np.float)
+            bw_piece = bw_piece.astype(np.float)
+            img_piece = (img_piece-imgmean)/imgstd
+            data = np.stack([img_piece,bw_piece], axis=0)
+        elif isinstance(image, torch.Tensor):
+            img_piece = img_piece.type(torch.float)
+            bw_piece = bw_piece.type(torch.float)
+            img_piece = (img_piece-imgmean)/imgstd
+            data = torch.stack([img_piece,bw_piece], dim=0)
+        piece_datas.append(ImagePiece(rid, data))
+    return piece_datas
+
 
 def generate_dataset(fromdir, todir):
     def walk_and_list_files(rootdir, suffix):
@@ -41,32 +105,27 @@ def generate_dataset(fromdir, todir):
         regions = data["regions"]
         regiontypes = data["regiontypes"].flatten()
         regionids = data["regionids"].flatten()
+        regionvalid = (regiontypes == 1) | (regiontypes == 2)
+        regions = regions[regionvalid,:]
+        regiontypes = regiontypes[regionvalid]
+        regionids = regionids[regionvalid]
         name = re.match(r"(^.+\/)?([^\/]+)\.\w+$", file).group(2)
-        ignored = 0
+        ignored = int((~regionvalid).sum())
         generated = 0
-        for i in range(len(regionids)):
+        for i, piece in enumerate(prepare_image(image, bwlworms, regions=regions, regionids=regionids)):
             regiontype = int(regiontypes[i])
             if regiontype == 1:
                 target = True
             elif regiontype == 2:
                 target = False
             else:
-                ignored += 1
-                continue
-            rx,ry,rw,rh = tuple(regions[i,:])
-            mw,mh = mp.marksize
-            imw,imh = tuple(image.shape)
-            if rw < mw: rx = min(imw-mw, max(0, int(rx-(mw-rw)/2)))
-            if rh < mh: ry = min(imh-mh, max(0, int(ry-(mh-rh)/2)))
-            if rw > mw or rh > mh:
+                raise ValueError("boooooom")
+            if piece is None:
                 ignored += 1
                 log("Warning: ignored region because it is too large. @%s #%d" % (name, int(regionids[i])))
                 continue
-            img_piece = image[ry:ry+mh, rx:rx+mw].astype(np.uint8)
-            bw_piece = (bwlworms[ry:ry+mh, rx:rx+mw] == int(regionids[i])).astype(np.uint8)
             savemat(os.path.join(todir, name + "__%03d.mat" % i), {
-                    "img": img_piece,
-                    "bw": bw_piece,
+                    "data": piece.data,
                     "target": np.array(target)
                 })
             generated += 1
@@ -119,11 +178,9 @@ class Dataset(TorchDataset):
                 return self.get_by_file(file)
     def get_by_file(self, file):
         data = loadmat(os.path.join(self.root, file))
-        img = torch.FloatTensor(data["img"]) / 255.0
-        bw = torch.FloatTensor(data["bw"])
-        img = torch.stack([img, bw], dim=0)
         label = torch.FloatTensor(data["target"].flatten())
-        return (img, label)
+        data = torch.FloatTensor(data["data"])
+        return (data, label)
     def copy(self):
         dataset = Dataset(_empty=True)
         dataset.root = self.root

@@ -1,5 +1,4 @@
 import lifespan.common.mainparams as mp
-from .global_vars import global_vars as gv
 import numpy as np, cv2, torch
 import skimage
 from lifespan.common.algos import fill_holes, torch_bwopen, torch_bwcentroid

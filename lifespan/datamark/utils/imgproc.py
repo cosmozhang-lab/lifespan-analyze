@@ -8,7 +8,7 @@ import os, shutil
 from lifespan.common.imgproc import plate_bw, detect_worm_2d
 
 constants = {}
-constants["coors"] = make_coors(mp.imagesize)
+constants["coors"] = make_coors(size=mp.imagesize, engine=torch, device="cuda")
 
 def mark_regions(bwl):
     bwl = bwl.cuda().type(torch.int)
@@ -49,10 +49,10 @@ def prepare_sample(filepath=None, cachename=None, storename=None):
         img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
         im = img.copy()
         bw = plate_bw(im)
-        if bw:
-            im[bw==0] = 0
-        else:
+        if bw is None:
             im[:] = 0
+        else:
+            im[bw==0] = 0
         bwlworms = detect_worm_2d(im)
         regions = mark_regions(bwlworms)
         regiontypes = [RegionType.UNKNOWN for i in range(len(regions))]

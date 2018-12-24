@@ -1,11 +1,9 @@
-import lifespan.common.mainparams as mp
-import time
-
 def run():
+    import lifespan.common.mainparams as mp
+    import time
     from . import userparam
-    from .global_vars import global_vars as gv
     from .analyzer import Analyzer
-    from .utils import format_duration
+    from lifespan.common.utils import format_duration
     for plate in userparam.plates:
         print("Task: %s" % plate)
         ts = time.time()

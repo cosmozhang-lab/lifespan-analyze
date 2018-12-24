@@ -4,7 +4,7 @@ import sys
 
 if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'datamark.settings')
-    sys.path.append(os.path.realpath(so.path.join(os.path.dirname(__file__), "..", "..")))
+    sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..")))
     sys.path.append(os.path.realpath(os.path.dirname(__file__)))
     try:
         from django.core.management import execute_from_command_line

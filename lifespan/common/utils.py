@@ -2,7 +2,6 @@ from datetime import datetime
 from time import time
 import progressbar
 import lifespan.common.mainparams as mp
-from .global_vars import global_vars as gv
 
 datetime_regfmt = r"\d+\-\d+\-\d+__\d+\-\d+\-\d+"
 datetime_format = "%Y-%m-%d__%H-%M-%S"

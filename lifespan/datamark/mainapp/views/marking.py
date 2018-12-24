@@ -6,11 +6,12 @@ from django.http import JsonResponse, HttpResponse
 from mainapp.models import Dataset, Sample
 from .login import getuser, authbar, redirectLogin
 from utils.common import parse_datetime, RegionType
-from utils.imgproc import prepare_sample, complete_sample as imgproc_complete_sample, PreparedSample, Rect
+from utils.imgproc import prepare_sample, complete_sample as imgproc_complete_sample, PreparedSample
+from lifespan.common.geo import Rect
 import os, shutil, time
 from django.conf import settings
 from utils.configs import MarkConfig
-from utils.mainparams import marksize
+from lifespan.common.mainparams import marksize
 from urllib.parse import unquote as unescape
 
 def index(request):
