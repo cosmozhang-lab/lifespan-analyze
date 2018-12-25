@@ -84,6 +84,7 @@ def fetch_sample(request):
     if user is None: return HttpResponse(403)
     rank = request.GET["rank"] if "rank" in request.GET else "descending"
     sampleid = int(request.GET["sampleid"]) if "sampleid" in request.GET else None
+    use_dnn = "dnn" in request.GET and request.GET["dnn"].lower() == "true"
     # Fetch a sample record in the database
     if not sampleid is None:
         sample = Sample.objects.get(id=sampleid)
@@ -112,7 +113,9 @@ def fetch_sample(request):
     cachefullname = os.path.join(settings.BASE_DIR, userpath, outname)
     filepath = os.path.join(sample.rootdir, sample.subdir, sample.filename)
     timing0 = time.time()
-    props = prepare_sample(filepath=filepath, storename=storefullname, cachename=cachefullname)
+    props = prepare_sample(filepath=filepath, storename=storefullname, cachename=cachefullname, use_dnn=use_dnn)
+    if props.airegiontypes is None:
+        props.airegiontypes = [RegionType.UNKNOWN for item in props.regiontypes]
     timing1 = time.time()
     timing = timing1 - timing0
     if sample.status == Sample.STATUS_UNMARKED:
@@ -129,6 +132,7 @@ def fetch_sample(request):
     retdata["proctime"] = timing
     retdata["marks"] = [{
             "type": props.regiontypes[i].name,
+            "aitype": props.airegiontypes[i].name,
             "rid": props.regionids[i],
             "x": props.regions[i].x,
             "y": props.regions[i].y,

@@ -250,7 +250,7 @@ Data Mark
                 data-toggle="tooltip" data-placement="bottom" title="Worm (W)"
                 v-on:click="toggleMarkMode('target')"
                 v-bind:class="{ active: (viewer.markmode == 'target') }">
-                <span style="color: #3399FF">W</span>
+                <span style="color: #33CC99">W</span>
                 <span class="plain-text" v-show='sample.markcounts["target"]'>&nbsp;({{sample.markcounts["target"]}})</span>
             </span>
             <span class="mode-item mode-item-colored"
@@ -375,6 +375,7 @@ var vue = new Vue({
         },
         reviewing: {
             reviewing: false,
+            use_dnn: false,
             sampleids: [],
             currentidx: 0
         }
@@ -536,14 +537,20 @@ var vue = new Vue({
             var mw = markitem.width * s;
             var mh = markitem.height * s;
             var colorscheme = {
-                "target": "#0066FF",
+                "target": "#00FF66",
                 "mistake": "#FF0000",
                 "unknown": "#FF00FF",
                 "blank": "#FF9933"
             };
+            var fillColorScheme = {
+                "unknown": "transparent",
+                "target": "#33FF992f",
+                "mistake": "#FF33332f"
+            };
             if (!(markitem.type in colorscheme)) return { "display": "none" };
             return {
                 borderColor: colorscheme[markitem.type],
+                backgroundColor: fillColorScheme[markitem.aitype] || fillColorScheme.unknown,
                 left: mx + "px",
                 top: my + "px",
                 width: mw + "px",
@@ -727,7 +734,10 @@ var vue = new Vue({
             var that = this;
             that.hideSearchbar();
             status_loading(true);
-            $.get(make_url('/api/marking/fetch_sample', { sampleid: sampleid }), function(data) {
+            $.get(make_url('/api/marking/fetch_sample', {
+                sampleid: sampleid,
+                dnn: that.reviewing.use_dnn ? "true" : "false"
+            }), function(data) {
                 if (data.success) {
                     data = data.data;
                     that.preload = false;
@@ -869,8 +879,9 @@ var vue = new Vue({
         }
         var finalpath = window.location.uri.split("/");
         finalpath = finalpath[finalpath.length-1];
-        that.rank = get_rank_item(window.location.query.rank || (finalpath == "reviewing" ? "ascending" : "random"));
-        that.reviewing.reviewing = (finalpath == "reviewing");
+        that.reviewing.reviewing = (finalpath === "reviewing" || finalpath === "testing");
+        that.reviewing.use_dnn = (finalpath === "testing");
+        that.rank = get_rank_item(window.location.query.rank || (that.reviewing.reviewing ? "ascending" : "random"));
         $(function () {
             that.viewer.el = $('#image-wrapper');
             that.viewer.img = $('#image');
@@ -997,7 +1008,10 @@ var vue = new Vue({
                         }
                     } else if (that.viewer.markmode == "delete") {
                         var markitem = that.hoverMark(event);
-                        if (markitem) markitem.deleted = true;
+                        if (markitem && (["target", "mistake", "unknown"].indexOf(markitem.type) < 0)) {
+                            markitem.deleted = true;
+                            that.sample.marks = [].concat(that.sample.marks);
+                        }
                     }
                     that.updateCounts();
                 }
@@ -1093,7 +1107,10 @@ var vue = new Vue({
                     $.get(make_url('/api/marking/sample_list', { setname: that.setname }), function(data) {
                         that.reviewing.sampleids = data.data;
                         that.reviewing.currentidx = 0;
-                        $.get(make_url('/api/marking/fetch_sample', { sampleid: that.reviewing.sampleids[that.reviewing.currentidx] }), function(data) {
+                        $.get(make_url('/api/marking/fetch_sample', {
+                            sampleid: that.reviewing.sampleids[that.reviewing.currentidx],
+                            dnn: that.reviewing.use_dnn ? "true" : "false"
+                        }), function(data) {
                             if (data.success) {
                                 data = data.data;
                                 that.sample.sampleid = data.sampleid;

@@ -9,6 +9,38 @@ from lifespan.common.imgproc import plate_bw, detect_worm_2d
 
 constants = {}
 constants["coors"] = make_coors(size=mp.imagesize, engine=torch, device="cuda")
+constants["discriminator"] = None
+
+def dnn_filter_worms(image, bwlworms, regions, regionids):
+    from lifespan.learning.dataset import prepare_image
+    from lifespan.learning.trainer import Trainer
+    from lifespan.learning.discriminator import Discriminator
+    import lifespan.learning.userconfig as dnnconfig
+    if constants["discriminator"] is None:
+        discriminator = Discriminator()
+        Trainer.load_model_params(discriminator, dnnconfig.model_path)
+        discriminator.to(torch.device("cuda"))
+        discriminator.requires_grad_(False)
+        constants["discriminator"] = discriminator
+    else:
+        discriminator = constants["discriminator"]
+    if isinstance(image, np.ndarray): image = torch.cuda.ByteTensor(image)
+    if isinstance(bwlworms, np.ndarray): bwlworms = torch.cuda.IntTensor(bwlworms)
+    image = image.type(torch.uint8).to(torch.device("cuda"))
+    bwlworms = bwlworms.type(torch.int32).to(torch.device("cuda"))
+    regions = np.array([[rect.x, rect.y, rect.w, rect.h] for rect in regions], dtype=np.int32)
+    regionids = np.array(regionids)
+    regiontypes = []
+    for i, piece in enumerate(prepare_image(image, bwlworms, regions=regions, regionids=regionids, coors=constants["coors"])):
+        if piece is None:
+            regiontypes.append(RegionType.UNKNOWN)
+            continue
+        label = bool(discriminator.predict(piece.data))
+        if label:
+            regiontypes.append(RegionType.TARGET)
+        else:
+            regiontypes.append(RegionType.MISTAKE)
+    return regiontypes
 
 def mark_regions(bwl):
     bwl = bwl.cuda().type(torch.int)
@@ -29,22 +61,28 @@ def mark_regions(bwl):
     return regions
 
 class PreparedSample:
-    def __init__(self, regions=None, regiontypes=None, regionids=None):
+    def __init__(self, regions=None, regiontypes=None, regionids=None, airegiontypes=None):
         self.regions = regions
         self.regiontypes = regiontypes
         self.regionids = regionids
+        self.airegiontypes = airegiontypes
 
-def prepare_sample(filepath=None, cachename=None, storename=None):
+def prepare_sample(filepath=None, cachename=None, storename=None, use_dnn=False):
     if storename and os.path.exists(storename + ".mat"):
         loaddata = loadmat(storename + ".mat")
         img = loaddata["img"]
+        bwlworms = loaddata["bwlworms"]
         regions = [Rect(int(x[0]),int(x[1]),int(x[2]),int(x[3])) for x in loaddata["regions"]]
         regionids = [int(i) for i in np.squeeze(loaddata["regionids"])]
         regiontypes = [RegionType.get(num=int(x)) for x in np.squeeze(loaddata["regiontypes"])]
         cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
         savemat(cachename + ".mat", loaddata)
         shutil.copy(storename + ".mat", cachename + ".mat")
-        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids)
+        if use_dnn:
+            airegiontypes = dnn_filter_worms(img, bwlworms, regions, regionids)
+        else:
+            airegiontypes = None
+        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids, airegiontypes=airegiontypes)
     elif filepath:
         img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
         im = img.copy()
@@ -70,7 +108,11 @@ def prepare_sample(filepath=None, cachename=None, storename=None):
         cv2.imwrite(cachename + ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 20])
         if storename:
             shutil.copy(cachename + ".mat", storename + ".mat")
-        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids)
+        if use_dnn:
+            airegiontypes = dnn_filter_worms(img, bwlworms, regions, regionids)
+        else:
+            airegiontypes = None
+        return PreparedSample(regions=regions, regiontypes=regiontypes, regionids=regionids, airegiontypes=airegiontypes)
     else:
         return None
 
