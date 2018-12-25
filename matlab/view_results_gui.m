@@ -280,7 +280,7 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.playing
+if ~isempty(handles) && handles.playing
     handles = stop_play(hObject, handles);
 end
 
