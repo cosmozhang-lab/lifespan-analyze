@@ -65,7 +65,7 @@ def dnn_filter_worms(image, bwlworms, discriminator, coors=None, default_adopt=N
     outnbwl = 0
     for piece in prepare_image(img, bwl, coors=coors):
         adopt = False
-        if piece is None:
+        if piece.data is None:
             if default_adopt is None:
                 raise ValueError("region is too large for the discriminator")
             elif default_adopt:

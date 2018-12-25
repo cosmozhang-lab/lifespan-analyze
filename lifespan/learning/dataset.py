@@ -54,7 +54,7 @@ def prepare_image(image, bwlworms, regions=None, regionids=None, coors=None):
         if rw < mw: rx = min(imw-mw, max(0, int(rx-(mw-rw)/2)))
         if rh < mh: ry = min(imh-mh, max(0, int(ry-(mh-rh)/2)))
         if rw > mw or rh > mh:
-            piece_datas.append(None)
+            piece_datas.append(ImagePiece(rid, None))
             continue
         img_piece = image[ry:ry+mh, rx:rx+mw]
         bw_piece = (bwlworms[ry:ry+mh, rx:rx+mw] == rid)
@@ -120,7 +120,7 @@ def generate_dataset(fromdir, todir):
                 target = False
             else:
                 raise ValueError("boooooom")
-            if piece is None:
+            if piece.data is None:
                 ignored += 1
                 log("Warning: ignored region because it is too large. @%s #%d" % (name, int(regionids[i])))
                 continue

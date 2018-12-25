@@ -32,7 +32,7 @@ def dnn_filter_worms(image, bwlworms, regions, regionids):
     regionids = np.array(regionids)
     regiontypes = []
     for i, piece in enumerate(prepare_image(image, bwlworms, regions=regions, regionids=regionids, coors=constants["coors"])):
-        if piece is None:
+        if piece.data is None:
             regiontypes.append(RegionType.UNKNOWN)
             continue
         label = bool(discriminator.predict(piece.data))
