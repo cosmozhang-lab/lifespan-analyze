@@ -22,7 +22,7 @@ function varargout = view_results_gui(varargin)
 
 % Edit the above text to modify the response to help view_results_gui
 
-% Last Modified by GUIDE v2.5 20-Oct-2018 11:48:56
+% Last Modified by GUIDE v2.5 25-Dec-2018 12:42:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -75,6 +75,8 @@ handles.nfiles = length(dirnames);
 handles.dirnames = dirnames;
 handles.imshifts = imshifts;
 handles.current = 0;
+handles.playing = false;
+handles.timer = [];
 
 % Update handles structure
 guidata(hObject, handles);
@@ -166,17 +168,20 @@ function goto_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 goto_image(hObject, handles, str2double(handles.goto_edit.String));
 
-function goto_image(hObject, handles, idx)
+function [handles] = goto_image(hObject, handles, idx)
 
 if ~isnan(idx) && (idx >= 0) && (idx <= handles.nfiles)
     params;
     figure(2);
     name = handles.dirnames{idx};
-    img = imread(fullfile(outdir, handles.plate, [name, suffix]));
-    imshow(image_shift(img, fliplr(handles.imshifts(idx,:))));
-    if ~isempty(handles.centroids); ctds = handles.centroids{idx}; else; ctds = []; end
-    if ~isempty(handles.oricentroids); octds = handles.oricentroids{idx}; else; octds = []; end
-    if ~isempty(handles.wormcentroids); wctds = handles.wormcentroids{idx}; else; wctds = []; end
+    platedir = handles.plate;
+    if sc ~= 1; platedir = [handles.plate, '.resize']; end
+    img = imread(fullfile(outdir, platedir, [name, suffix]));
+    img = image_shift(img, fliplr(int32(handles.imshifts(idx,:)*sc)));
+    imshow(img);
+    if ~isempty(handles.centroids); ctds = handles.centroids{idx} * sc; else; ctds = []; end
+    if ~isempty(handles.oricentroids); octds = handles.oricentroids{idx} * sc; else; octds = []; end
+    if ~isempty(handles.wormcentroids); wctds = handles.wormcentroids{idx} * sc; else; wctds = []; end
     if ~isempty(wctds)
         hold on;
         plot(wctds(:,2), wctds(:,1), '.', 'Color', [0,1,0]);
@@ -200,3 +205,84 @@ if ~isnan(idx) && (idx >= 0) && (idx <= handles.nfiles)
     guidata(hObject, handles);
 end
 
+if idx >= handles.nfiles
+    handles = stop_play(hObject, handles);
+end
+
+
+
+
+function interval_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to interval_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of interval_edit as text
+%        str2double(get(hObject,'String')) returns contents of interval_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function interval_edit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to interval_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in play_button.
+function play_button_Callback(hObject, eventdata, handles)
+% hObject    handle to play_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if handles.playing; handles = stop_play(hObject, handles);
+else; handles = start_play(hObject, handles); end
+guidata(hObject, handles);
+
+function [handles] = start_play(hObject, handles)
+handles.playing = true;
+if isempty(handles.timer)
+    handles = play_step(hObject, handles);
+end
+guidata(hObject, handles);
+
+function [handles] = stop_play(hObject, handles)
+handles.playing = false;
+if ~isempty(handles.timer)
+    stop(handles.timer);
+    delete(handles.timer);
+    handles.timer = [];
+end
+guidata(hObject, handles);
+
+function [handles] = play_step(hObject, handles)
+if handles.playing
+    handles = goto_image(hObject, handles, handles.current + 1);
+end
+if handles.playing
+    interval = str2double(handles.interval_edit.String);
+    handles.timer = timer;
+    guidata(hObject, handles);
+    handles.timer.StartDelay = interval / 1000;
+    handles.timer.TimerFcn = @(timerObj, timerEvent) play_step(hObject, handles);
+    start(handles.timer);
+end
+
+
+
+% --- Executes when user attempts to close figure1.
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if handles.playing
+    handles = stop_play(hObject, handles);
+end
+
+% Hint: delete(hObject) closes the figure
+delete(hObject);
