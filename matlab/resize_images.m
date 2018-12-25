@@ -6,9 +6,12 @@ if ~exist(fullfile(outdir, [plate, '.resize']), 'dir')
 end
 for i = 1:nfiles
     name = dirnames{i};
-    img = imread(fullfile(outdir, plate, [name, suffix]));
-    img = imresize(img, sc);
-    imwrite(img, fullfile(outdir, [plate, '.resize'], [name, suffix]));
+    tofilepath = fullfile(outdir, [plate, '.resize'], [name, suffix]);
+    if ~exist(tofilepath, 'file');
+        img = imread(fullfile(outdir, plate, [name, suffix]));
+        img = imresize(img, sc);
+        imwrite(img, tofilepath);
+    end
     fprintf('%d/%d\n', i, nfiles);
 end
 end

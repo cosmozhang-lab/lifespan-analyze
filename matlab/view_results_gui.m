@@ -57,6 +57,8 @@ handles.output = hObject;
 
 params;
 load(fullfile(outdir, [plate, '.out.mat']));
+nfiles = min(nfiles,maxnfiles);
+numdeaths = numdeaths(1:nfiles);
 numdeaths(isnan(numdeaths)) = 0;
 numalive = cumsum(numdeaths);
 numalive = numalive(end) - numalive;
@@ -71,7 +73,7 @@ handles.numalive = numalive;
 handles.centroids = centroids;
 handles.oricentroids = oricentroids;
 handles.wormcentroids = wormcentroids;
-handles.nfiles = length(dirnames);
+handles.nfiles = nfiles;
 handles.dirnames = dirnames;
 handles.imshifts = imshifts;
 handles.current = 0;
@@ -82,7 +84,9 @@ handles.timer = [];
 guidata(hObject, handles);
 
 figure(1);
-plot(numalive);
+plot(double((1:nfiles)-1)/framerate, numalive);
+xlabel('time (day)');
+ylabel('alive worms');
 
 % UIWAIT makes view_results_gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);

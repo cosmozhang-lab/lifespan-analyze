@@ -64,7 +64,7 @@ class ImageItem:
         buffdir = os.path.join(buffdir, "jpeg")
         if not os.path.isdir(buffdir): os.mkdir(buffdir)
         bufffile = os.path.join(buffdir, self.subdir + ".jpg")
-        cv2.imwrite(bufffile, self.image, [cv2.IMWRITE_JPEG_QUALITY,20])
+        if not os.path.isfile(bufffile): cv2.imwrite(bufffile, self.image, [cv2.IMWRITE_JPEG_QUALITY,20])
 
     def save_buff(self):
         if not self.save_buff_flag: return
@@ -74,12 +74,13 @@ class ImageItem:
         buffdir = os.path.join(buffdir, "buff")
         if not os.path.isdir(buffdir): os.mkdir(buffdir)
         bufffile = os.path.join(buffdir, self.subdir + mp.imgsuffix)
-        cv2.imwrite(bufffile, self.image)
+        if not os.path.isfile(bufffile): cv2.imwrite(bufffile, self.image)
 
 class ImageManager:
-    def __init__(self, root=None, plate=None, ifile0=0, nfiles=None, backward=0, forward=0, save_jpeg=False, save_buff=False):
+    def __init__(self, root=None, plate=None, ifile0=0, nfiles=None, backward=0, forward=0, save_jpeg=False, save_buff=False, buffdir=None):
         self.save_jpeg_flag = save_jpeg
         self.save_buff_flag = save_buff
+        self.buffdir = buffdir
         self.plate = plate
         self.rootdir = root
         filelistslice = slice(ifile0) if nfiles is None else slice(ifile0, ifile0+nfiles)
@@ -110,12 +111,12 @@ class ImageManager:
     def prev(self):
         self.current -= 1
         newitem = self.current - self.backward
-        newitem = None if newitem < 0 else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag)
+        newitem = None if newitem < 0 else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, buffdir=self.buffdir)
         self.imgbuff = [newitem] + self.imgbuff[:-1]
     def next(self):
         self.current += 1
         newitem = self.current + self.forward
-        newitem = None if newitem >= self.length else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag)
+        newitem = None if newitem >= self.length else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, buffdir=self.buffdir)
         self.imgbuff = self.imgbuff[1:] + [newitem]
 
     def __len__(self):
