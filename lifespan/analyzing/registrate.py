@@ -3,6 +3,7 @@ import numpy as np, torch
 import skimage
 from lifespan.common.algos import fill_holes, torch_bwcentroid
 from lifespan.common.imgproc import plate_bw
+from .image_manager import StepRegistrate
 
 # def plate_centroid(image, coors):
 #     bw = (image >= mp.plate_threshold).astype(np.uint8)
@@ -40,6 +41,8 @@ class Registrator:
         self.images = images
         self.c0 = None
     def step(self, index):
+        if self.images[index].step >= StepRegistrate:
+            return True
         if self.images[index].error:
             return False
         bw = plate_bw(self.images[index].image)
@@ -52,4 +55,5 @@ class Registrator:
         self.images[index].image[bw==0] = 0
         self.images[index].image = shift_image(self.images[index].image, self.images[index].shifting)
         self.images[index].gpuimage = torch.cuda.ByteTensor(self.images[index].image)
+        self.images[index].step = StepRegistrate
         return True

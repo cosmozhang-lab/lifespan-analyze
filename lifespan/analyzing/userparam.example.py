@@ -12,4 +12,4 @@ verbose = 5
 outdir = "/disk1/home/cosmo/downloads"
 savebuff = False
 savejpeg = False
-savesteps = False
+savestep = None # can be "registrate" | "detect"

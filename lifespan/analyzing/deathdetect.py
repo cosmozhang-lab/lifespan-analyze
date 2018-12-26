@@ -2,6 +2,7 @@ import lifespan.common.mainparams as mp
 import numpy as np, cv2, torch
 import skimage
 from lifespan.common.algos import make_coors, torch_bwcentroid
+from .image_manager import StepAnalyze
 
 class DeathJudgement:
     def __init__(self, numdeaths=0, bwldeaths=None, centroids=None):
@@ -64,9 +65,13 @@ class DeathDetector:
         self.images = images
         self.bwdeaths = torch.cuda.ByteTensor(np.zeros(mp.imagesize))
     def step(self, index):
-        if index < mp.finterval-1:
-            return False
+        if self.images[index].step >= StepAnalyze:
+            return True
         if self.images[index].error:
+            return False
+        if self.images[index].gpuwormbw is None:
+            self.images[index].gpuwormbw = torch.cuda.ByteTensor(self.images[index].wormbw)
+        if index < mp.finterval-1:
             return False
         dji = death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
         if index > mp.finterval-1: djr = death_select(self.images, self.bwdeaths, dji.bwldeaths, mp.death_overlap_threshold_for_selecting)
@@ -79,4 +84,5 @@ class DeathDetector:
                 centroids = djr.centroids,
                 centroids_origin = dji.centroids
             )
+        self.images[index].step = StepAnalyze
         return True

@@ -9,9 +9,9 @@ from .output import SummaryCollector
 from lifespan.common.utils import ProgressBar
 
 class Analyzer:
-    def __init__(self, rootdir=None, outdir=None, plate=None, ifile0=0, nfiles=None, save_jpeg=False, save_buff=False, buffdir=None):
+    def __init__(self, rootdir=None, outdir=None, plate=None, ifile0=0, nfiles=None, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
         self.plate = plate
-        self.images = ImageManager(root=rootdir, plate=plate, ifile0=ifile0, nfiles=nfiles, backward=mp.finterval-1, save_jpeg=save_jpeg, save_buff=save_buff, buffdir=buffdir)
+        self.images = ImageManager(root=rootdir, plate=plate, ifile0=ifile0, nfiles=nfiles, backward=mp.finterval-1, save_jpeg=save_jpeg, save_buff=save_buff, save_step=save_step, buffdir=buffdir)
         self.nextstep = 0
         self.registrator = Registrator(self.images)
         self.wormdetector = WormDetector(self.images)
@@ -34,6 +34,7 @@ class Analyzer:
         self.deathdetector.step(index)
         if self.prgbar: self.prgbar.update(index+1, "collecting results")
         self.summary.step(index)
+        self.images.save_step(index)
         self.nextstep += 1
     def complete(self):
         self.summary.complete()

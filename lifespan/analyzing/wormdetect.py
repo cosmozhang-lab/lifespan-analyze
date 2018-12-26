@@ -3,6 +3,7 @@ import numpy as np, cv2, torch
 import skimage
 from lifespan.common.algos import fill_holes, torch_bwopen, torch_bwcentroid
 from lifespan.common.imgproc import detect_worm_2d, dnn_filter_worms
+from .image_manager import StepDetect
 
 def calculate_worm_centroids(bwlworms, coors=None):
     nbwl = torch.max(bwlworms)
@@ -26,8 +27,12 @@ class WormDetector:
             WormDetector.discriminator.to(torch.device("cuda"))
             WormDetector.discriminator.requires_grad_(False)
     def step(self, index):
+        if self.images[index].step >= StepDetect:
+            return True
         if self.images[index].error:
             return False
+        if self.images[index].gpuimage is None:
+            self.images[index].gpuimage = torch.cuda.ByteTensor(self.images[index].image)
         gpuwormbwl = detect_worm_2d(self.images[index].gpuimage)
         if mp.dnn_discriminate:
             gpuwormbwl = dnn_filter_worms(self.images[index].gpuimage, gpuwormbwl, WormDetector.discriminator, coors=self.images.coors, default_adopt=True)
@@ -35,4 +40,5 @@ class WormDetector:
         self.images[index].gpuwormbw = gpuwormbw
         self.images[index].wormbw = gpuwormbw.cpu().numpy()
         self.images[index].wormcentroids = calculate_worm_centroids(gpuwormbwl, self.images.coors)
+        self.images[index].step = StepDetect
         return True
