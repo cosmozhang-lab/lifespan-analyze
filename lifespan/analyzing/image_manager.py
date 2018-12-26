@@ -58,6 +58,7 @@ class ImageItem:
         self.death = None
         self.shifting = None
         self.wormcentroids = None
+        self.error = None
         self.buffdir = buffdir
         self.load_step()
         self.save_jpeg_flag = (not buffdir is None) and save_jpeg
@@ -65,7 +66,6 @@ class ImageItem:
         self.save_step_name = (not buffdir is None) and save_step
         self.save_jpeg()
         self.save_buff()
-        self.error = None
 
     def save_jpeg(self):
         if not self.save_jpeg_flag: return
@@ -101,7 +101,7 @@ class ImageItem:
 
     def step_data(self, stepname):
         retdata = {
-            "error": np.array(1 if self.error else 0),
+            "error": np.array(1 if (not self.error is None) else 0),
             "shifting": self.shifting if (not self.shifting is None) else np.array([]),
             "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([])
         }
@@ -131,7 +131,7 @@ class ImageItem:
                 bufffile = os.path.join(buffdir, self.plate, "step", self.subdir + "." + stepname + ".mat")
                 if os.path.isfile(bufffile):
                     buffdata = loadmat(bufffile)
-                    if "error" in buffdata: self.error = True if bool(buffdata["error"]) else None
+                    if "error" in buffdata: self.error = ValueError("error in load data") if bool(buffdata["error"]) else None
                     if "shifting" in buffdata: self.shifting = buffdata["shifting"]
                     if "wormcentroids" in buffdata: self.wormcentroids = buffdata["wormcentroids"]
                     if "image" in buffdata: self.image = buffdata["image"]
