@@ -191,16 +191,16 @@ if ~isnan(idx) && (idx >= 0) && (idx <= handles.nfiles)
         plot(wctds(:,2), wctds(:,1), '.', 'Color', [0,1,0]);
         hold off;
     end
-    if ~isempty(octds)
-        hold on;
-        plot(octds(:,2), octds(:,1), 'b*');
-        hold off;
-    end
-    if ~isempty(ctds)
-        hold on;
-        plot(ctds(:,2), ctds(:,1), 'ro');
-        hold off;
-    end
+%     if ~isempty(octds)
+%         hold on;
+%         plot(octds(:,2), octds(:,1), 'b*');
+%         hold off;
+%     end
+%     if ~isempty(ctds)
+%         hold on;
+%         plot(ctds(:,2), ctds(:,1), 'ro');
+%         hold off;
+%     end
     name = strrep(name, '__', 'T');
     title(sprintf('%d/%d  %s', idx, handles.nfiles, name));
     handles.info_edit.String = sprintf('%d/%d  %s', idx, handles.nfiles, name);
