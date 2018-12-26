@@ -84,8 +84,8 @@ handles.timer = [];
 guidata(hObject, handles);
 
 figure(1);
-plot(double((1:nfiles)-1)/framerate, numalive);
-xlabel('time (day)');
+plot(numalive);
+xlabel('frame');
 ylabel('alive worms');
 
 % UIWAIT makes view_results_gui wait for user response (see UIRESUME)
