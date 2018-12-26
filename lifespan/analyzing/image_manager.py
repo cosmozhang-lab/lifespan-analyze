@@ -106,9 +106,9 @@ class ImageItem:
             "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([])
         }
         if stepname == "registrate":
-            retdata["image"] = self.image
+            retdata["image"] = self.image if (not self.image is None) else np.array([])
         elif stepname == "detect":
-            retdata["wormbw"] = self.wormbw
+            retdata["wormbw"] = self.wormbw if (not self.wormbw is None) else np.array([])
         return retdata
 
     def load_buff(self):
