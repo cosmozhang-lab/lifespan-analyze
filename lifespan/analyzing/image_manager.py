@@ -1,5 +1,5 @@
 import os
-import cv2, torch
+import cv2, torch, numpy as np
 import lifespan.common.mainparams as mp
 from lifespan.common.utils import datetime_regfmt, parse_datetime
 from lifespan.common.algos import make_coors
@@ -101,6 +101,7 @@ class ImageItem:
 
     def step_data(self, stepname):
         retdata = {
+            "error": np.array(1 if self.error else 0),
             "shifting": self.shifting if (not self.shifting is None) else np.array([]),
             "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([])
         }
@@ -130,6 +131,7 @@ class ImageItem:
                 bufffile = os.path.join(buffdir, self.plate, "step", self.subdir + "." + stepname + ".mat")
                 if os.path.isfile(bufffile):
                     buffdata = loadmat(bufffile)
+                    if "error" in buffdata: self.error = True if bool(buffdata["error"]) else None
                     if "shifting" in buffdata: self.shifting = buffdata["shifting"]
                     if "wormcentroids" in buffdata: self.wormcentroids = buffdata["wormcentroids"]
                     if "image" in buffdata: self.image = buffdata["image"]
