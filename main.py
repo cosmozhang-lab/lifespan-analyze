@@ -14,3 +14,8 @@ if command == "analyze":
 elif command == "train":
     from lifespan.learning.main import train
     train()
+elif command == "rundatasets":
+    from lifespan.learning.main import run_datasets
+    run_datasets()
+else:
+    print("command not recognized")

@@ -9,3 +9,4 @@ clear_model = False
 load_model = False
 save_model = False
 model_path = "/path/to/model"
+run_datasets_output = "/run/datasets/output"

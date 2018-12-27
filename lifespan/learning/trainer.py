@@ -10,6 +10,7 @@ from .torchutils import OneHotTransform
 import time
 import re
 from lifespan.common.utils import TicToc
+from scipy.io import savemat, loadmat
 
 class Trainer:
     def __init__(self, datasetdir=None, generate_from=None, device="cpu", load_model=None, soft_load=True, dataset_info_path=None):
@@ -175,17 +176,30 @@ class Trainer:
         print("dataset <test> info: total %d (pos: %d / neg: %d)" % (summary.total, summary.positive, summary.negative))
 
 
-    def run_dataset(self, dataset, batchsize=4):
+    def run_dataset(self, dataset, batchsize=4, with_progressbar=False):
         requires_grad = self.net.requires_grad
         if requires_grad: self.net.requires_grad_(False)
-        loader = DataLoader(self.trainset, batch_size=batchsize)
+        loader = DataLoader(dataset, batch_size=batchsize)
         labels = []
         scores = []
+        prgbar = None
+        if with_progressbar:
+            import progressbar
+            prgbar = progressbar.ProgressBar(maxval=len(dataset), widgets=[
+                    progressbar.Bar("#"),
+                    progressbar.Counter(" %(value)d/%(max_value)d"),
+                    progressbar.ETA(format             = "  %(elapsed)s (ETA: %(eta)s)",
+                                    format_finished    = "  %(elapsed)s",
+                                    format_not_started = "  --:--:-- (ETA: --:--:--)")
+                ])
         for i, batchdata in enumerate(loader):
             batchinput, batchlabel = batchdata
-            batchscore = self.net(batchinput)
+            batchscore = self.net(batchinput.to(self.device)).cpu()
             labels += list(batchlabel.numpy().flatten())
             scores += list(batchscore.numpy().flatten())
+            if prgbar: prgbar.update(len(labels))
+        if prgbar: prgbar.finish()
+        if requires_grad: self.net.requires_grad_(True)
         return RunResult(labels=labels, scores=scores)
 
 
@@ -203,6 +217,14 @@ class RunResult:
         tn = n[~n]
         fn = p[~p]
         return RunStats(tp=tp, fp=fp, tn=tn, fn=fn)
+    def save(self, filepath=None):
+        savedata = {
+            "labels": self.labels.flatten(),
+            "scores": self.scores.flatten()
+        }
+        if filepath:
+            savemat(filepath, savedata)
+        return savedata
 
 class RunStats:
     def __init__(self, tp=None, fp=None, tn=None, fn=None):
