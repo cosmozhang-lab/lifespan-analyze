@@ -9,6 +9,7 @@ from .discriminator import Discriminator
 from .torchutils import OneHotTransform
 import time
 import re
+from lifespan.common.utils import TicToc
 
 class Trainer:
     def __init__(self, datasetdir=None, generate_from=None, device="cpu", load_model=None, soft_load=True, dataset_info_path=None):
@@ -34,7 +35,7 @@ class Trainer:
             testset_info_path = dataset_info_path + ".test.json"
         if trainset_info_path and testset_info_path and os.path.isfile(trainset_info_path) and os.path.isfile(testset_info_path):
             print("load dataset<train> from %s" % trainset_info_path)
-            print("load dataset<test> from %s" % trainset_info_path)
+            print("load dataset<test> from %s" % testset_info_path)
             self.trainset = Dataset(info_file=trainset_info_path)
             self.testset = Dataset(info_file=testset_info_path)
             self.dataset = Dataset(join=[self.trainset,self.testset])

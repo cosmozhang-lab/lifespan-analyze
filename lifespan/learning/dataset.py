@@ -249,7 +249,7 @@ class Dataset(TorchDataset):
                 "files": self.files
             }, indent=indent)
         file = open(filepath, "wb")
-        file.write(file.encode("utf-8"))
+        file.write(filecontent.encode("utf-8"))
         file.close()
     def load_info(self, filepath):
         import json

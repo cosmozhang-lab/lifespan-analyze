@@ -70,3 +70,17 @@ def format_duration(seconds):
     if hours > 0:
         result = ("%dh" % hours) + " " + result
     return result
+
+class TicToc:
+    def __init__(self):
+        self.tic()
+    def tic(self):
+        self.veryts = time()
+        self.ts = time()
+    def toc(self, prompt):
+        te = time()
+        print(prompt, te - self.ts)
+        self.ts = te
+    def total(self, prompt):
+        te = time()
+        print(prompt, te - self.veryts)
