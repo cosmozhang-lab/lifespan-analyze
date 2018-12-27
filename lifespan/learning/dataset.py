@@ -140,12 +140,38 @@ def delete_dataset(datasetdir):
 
 
 
+class DatasetSummary:
+    def __init__(self, total=None, positive=None, negative=None):
+        self.total = total
+        self.positive = positive
+        self.negative = negative
+
+
+
 class Dataset(TorchDataset):
-    def __init__(self, root=None, generate_from=None, _empty=False):
+    def __init__(self, root=None, generate_from=None, info_file=None, join=None, _empty=False):
         if _empty:
             self.root = None
             self.files = None
             return
+        if not join is None:
+            if len(join) == 0:
+                raise ValueError("join list is empty")
+            self.root = join[0].root
+            self.files = []
+            for item in join:
+                if item.root != self.root:
+                    raise ValueError("datasets in join list do not have the same root")
+                self.files = self.files + item.files
+            return
+        if info_file:
+            if os.path.isfile(info_file):
+                self.load_info(info_file)
+            else:
+                raise IOError("cannot load dataset info from %s (file does not exist)" % info_file)
+            return
+        if root is None:
+            raise ValueError("root directory is not given")
         self.root = root
         if root is None:
             raise ValueError("root directory is not given")
@@ -209,14 +235,30 @@ class Dataset(TorchDataset):
             start = end
         return proportions.__class__(ret)
     def check(self):
-        print("checking data set...")
         positive = 0
         negative = 0
         for i in range(len(self)):
             img,label = self[i]
             if label: positive += 1
             else: negative += 1
-        print("dataset info: total %d (pos: %d / neg: %d)" % (len(self), positive, negative))
+        return DatasetSummary(total=len(self), positive=positive, negative=negative)
+    def save_info(self, filepath, indent=None):
+        import json
+        filecontent = json.dumps({
+                "root": self.root,
+                "files": self.files
+            }, indent=indent)
+        file = open(filepath, "wb")
+        file.write(file.encode("utf-8"))
+        file.close()
+    def load_info(self, filepath):
+        import json
+        file = open(filepath, "rb")
+        filecontent = file.read().decode("utf-8")
+        file.close()
+        jsondict = json.loads(filecontent)
+        self.root = jsondict["root"]
+        self.files = jsondict["files"]
 
 
 

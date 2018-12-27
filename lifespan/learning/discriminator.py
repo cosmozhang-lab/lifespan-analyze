@@ -24,6 +24,8 @@ class Discriminator(nn.Module):
         # loss function
         self.loss = nn.MSELoss()
         self.accuracy = DiscriminatorAccuracy()
+        # other properties
+        self.requires_grad = True
     def forward(self, x):
         y = x
         y = self.conv1(y)
@@ -60,3 +62,4 @@ class Discriminator(nn.Module):
     def requires_grad_(self, requires_grad=True):
         for parameter in self.parameters():
             parameter.requires_grad_(requires_grad)
+        self.requires_grad = requires_grad
