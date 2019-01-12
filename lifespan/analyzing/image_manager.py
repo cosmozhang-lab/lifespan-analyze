@@ -21,7 +21,7 @@ class FileItem:
     def path(self):
         return os.path.join(self.rootdir, self.subdir, self.filename)
 
-def get_file_list(rootdir, plate):
+def get_file_list(rootdir, plate, from_time=None, to_time=None):
     import re
     filelist = os.listdir(rootdir)
     filelist = list(filter(
@@ -41,6 +41,8 @@ def get_file_list(rootdir, plate):
         ))
     ))
     filelist.sort(key=(lambda x: x.datetime))
+    if not from_time is None: filelist = list(filter(lambda item: item.datetime >= from_time, filelist))
+    if not to_time is None: filelist = list(filter(lambda item: item.datetime <= to_time, filelist))
     return filelist
 
 
@@ -143,7 +145,7 @@ class ImageItem:
             self.load_buff()
 
 class ImageManager:
-    def __init__(self, root=None, plate=None, ifile0=0, nfiles=None, backward=0, forward=0, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
+    def __init__(self, root=None, plate=None, ifile0=0, nfiles=None, from_time=None, to_time=None, remember_duration=mp.finterval, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
         self.save_jpeg_flag = save_jpeg
         self.save_buff_flag = save_buff
         self.save_step_name = save_step
@@ -152,39 +154,35 @@ class ImageManager:
         self.rootdir = root
         filelistslice = slice(ifile0) if nfiles is None else slice(ifile0, ifile0+nfiles)
         self.filelist = get_file_list(self.rootdir, self.plate)[filelistslice]
-        self.backward = backward
-        self.forward = forward
-        self.imgbuff = [None for i in range(self.buffsize)]
+        self.images = [None for i in range(self.length)]
+        self.remember_duration = datetime.timedelta(hours=remember_duration)
         self.current = 0
         self.coors = make_coors(size=mp.imagesize, engine=torch, device="cuda")
-
-    @property
-    def buffsize(self):
-        return self.backward + self.forward + 1
 
     @property
     def length(self):
         return len(self.filelist)
     
-    def init(self, pos):
-        for ig in range(self.buffsize):
-            ic = pos - self.backward + ig
-            if ic < 0 or ic >= self.length:
-                self.imgbuff[ig] = None
+    def goto(self, pos):
+        pos = max(pos, 0)
+        pos = min(pos, self.length-1)
+        gotoitem = self.filelist[pos]
+        enddate = gotoitem.datetime
+        startdate = gotoitem.datetime - self.remember_duration
+        for i in range(self.length):
+            item = self.filelist[i]
+            if item.datetime <= startdate or item.datetime > enddate:
+                self.images[i] = None
             else:
-                self.imgbuff[ig] = torch.cuda.ByteTensor(self.images[ic])
+                self.images[i] = ImageItem(item, save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, save_step=self.save_step_name, buffdir=self.buffdir)
         self.current = pos
 
+    def init(self, pos):
+        self.goto(pos)
     def prev(self):
-        self.current -= 1
-        newitem = self.current - self.backward
-        newitem = None if newitem < 0 else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, save_step=self.save_step_name, buffdir=self.buffdir)
-        self.imgbuff = [newitem] + self.imgbuff[:-1]
+        self.goto(self.current-1)
     def next(self):
-        self.current += 1
-        newitem = self.current + self.forward
-        newitem = None if newitem >= self.length else ImageItem(self.filelist[newitem], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, save_step=self.save_step_name, buffdir=self.buffdir)
-        self.imgbuff = self.imgbuff[1:] + [newitem]
+        self.goto(self.current+1)
 
     def save_step(self, index):
         self[index].save_step()
@@ -193,12 +191,4 @@ class ImageManager:
         return len(self.filelist)
 
     def __getitem__(self, index):
-        if type(index) == int:
-            if index < 0 or index >= self.length:
-                raise IndexError("index out of range")
-            ig = index - self.current + self.backward
-            if ig < 0 or ig >= self.buffsize:
-                raise IndexError("queried index is not bufferred")
-            return self.imgbuff[ig]
-        else:
-            raise TypeError("indices must be integers or slices, not list")
+        return self.images[index]
