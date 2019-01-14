@@ -13,4 +13,5 @@ localthreshold_size = (257, 257)
 death_overlap_threshold = 0.8
 death_overlap_threshold_for_selecting = 0.5
 finterval = 24
+minframes = 3
 dnn_discriminate = True

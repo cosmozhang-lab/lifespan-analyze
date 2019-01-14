@@ -11,7 +11,7 @@ from lifespan.common.utils import ProgressBar
 class Analyzer:
     def __init__(self, rootdir=None, outdir=None, plate=None, ifile0=0, nfiles=None, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
         self.plate = plate
-        self.images = ImageManager(root=rootdir, plate=plate, ifile0=ifile0, nfiles=nfiles, backward=mp.finterval-1, save_jpeg=save_jpeg, save_buff=save_buff, save_step=save_step, buffdir=buffdir)
+        self.images = ImageManager(root=rootdir, plate=plate, ifile0=ifile0, nfiles=nfiles, save_jpeg=save_jpeg, save_buff=save_buff, save_step=save_step, buffdir=buffdir)
         self.nextstep = 0
         self.registrator = Registrator(self.images)
         self.wormdetector = WormDetector(self.images)

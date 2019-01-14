@@ -4,6 +4,7 @@ import lifespan.common.mainparams as mp
 from lifespan.common.utils import datetime_regfmt, parse_datetime
 from lifespan.common.algos import make_coors
 from scipy.io import savemat, loadmat
+import datetime
 
 StepInit = 0
 StepRegistrate = 1
@@ -51,6 +52,7 @@ class ImageItem:
         self.plate = fileitem.plate
         self.subdir = fileitem.subdir
         self.imgpath = fileitem.path
+        self.datetime = fileitem.datetime
         self.step = StepInit
         self.initstep = StepInit
         self.image = None
@@ -169,12 +171,13 @@ class ImageManager:
         gotoitem = self.filelist[pos]
         enddate = gotoitem.datetime
         startdate = gotoitem.datetime - self.remember_duration
+        rememberflags = [(item.datetime >= startdate and item.datetime <= enddate) for item in self.filelist]
         for i in range(self.length):
-            item = self.filelist[i]
-            if item.datetime <= startdate or item.datetime > enddate:
+            if not rememberflags[i] and not self.images[i] is None:
                 self.images[i] = None
-            else:
-                self.images[i] = ImageItem(item, save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, save_step=self.save_step_name, buffdir=self.buffdir)
+        for i in range(self.length):
+            if rememberflags[i] and self.images[i] is None:
+                self.images[i] = ImageItem(self.filelist[i], save_jpeg=self.save_jpeg_flag, save_buff=self.save_buff_flag, save_step=self.save_step_name, buffdir=self.buffdir)
         self.current = pos
 
     def init(self, pos):
