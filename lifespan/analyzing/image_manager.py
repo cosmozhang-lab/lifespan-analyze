@@ -70,6 +70,7 @@ class ImageItem:
     def save_jpeg(self):
         if not self.save_jpeg_flag: return
         buffdir = self.buffdir
+        if buffdir is None: return
         buffdir = os.path.join(buffdir, self.plate)
         if not os.path.isdir(buffdir): os.mkdir(buffdir)
         buffdir = os.path.join(buffdir, "jpeg")
@@ -80,6 +81,7 @@ class ImageItem:
     def save_buff(self):
         if not self.save_buff_flag: return
         buffdir = self.buffdir
+        if buffdir is None: return
         buffdir = os.path.join(buffdir, self.plate)
         if not os.path.isdir(buffdir): os.mkdir(buffdir)
         buffdir = os.path.join(buffdir, "buff")
@@ -91,6 +93,7 @@ class ImageItem:
         if self.save_step_name is None: return
         stepname = self.save_step_name
         buffdir = self.buffdir
+        if buffdir is None: return
         buffdir = os.path.join(buffdir, self.plate)
         if not os.path.isdir(buffdir): os.mkdir(buffdir)
         buffdir = os.path.join(buffdir, "step")
