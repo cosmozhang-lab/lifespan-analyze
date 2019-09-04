@@ -36,7 +36,7 @@ class WormDetector:
         gpuwormbwl = detect_worm_2d(self.images[index].gpuimage)
         if mp.dnn_discriminate:
             gpuwormbwl = dnn_filter_worms(self.images[index].gpuimage, gpuwormbwl, WormDetector.discriminator, coors=self.images.coors, default_adopt=True)
-        gpuwormbw = gpuwormbwl > 0
+        gpuwormbw = (gpuwormbwl > 0).to(torch.uint8)
         self.images[index].gpuwormbw = gpuwormbw
         self.images[index].wormbw = gpuwormbw.cpu().numpy()
         self.images[index].wormcentroids = calculate_worm_centroids(gpuwormbwl, self.images.coors)
