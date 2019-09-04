@@ -1,0 +1,10 @@
+{
+    "name": "hostname",
+    "host": "hostname",
+    "protocol": "sftp",
+    "port": 22,
+    "username": "username",
+    "password": "password",
+    "remotePath": "/path/to/lifespan-analyze",
+    "uploadOnSave": true
+}
