@@ -55,7 +55,6 @@ class ImageItem:
         self.gpuimage = None
         self.wormbwl = None
         self.gpuwormbwl = None
-        self.death = None
         self.shifting = None
         self.wormcentroids = None
         self.wormdies = None
@@ -111,10 +110,10 @@ class ImageItem:
             "error": np.array(1 if (not self.error is None) else 0),
             "shifting": self.shifting if (not self.shifting is None) else np.array([]),
             "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([]),
-            "wormdies": self.wormdies if (not self.wormdies is None) else np.array([]),
-            "wormdead": self.wormdead if (not self.wormdead is None) else np.array([]),
-            "score_deathdetect": self.score_deathdetect if (not self.score_deathdetect is None) else np.array([]),
-            "score_deathselect": self.score_deathselect if (not self.score_deathselect is None) else np.array([])
+            "wormdies": self.wormdies if (not self.wormdies is None) else np.array([], dtype=np.bool),
+            "wormdead": self.wormdead if (not self.wormdead is None) else np.array([], dtype=np.bool),
+            "score_deathdetect": self.score_deathdetect if (not self.score_deathdetect is None) else np.array([], dtype=np.float),
+            "score_deathselect": self.score_deathselect if (not self.score_deathselect is None) else np.array([], dtype=np.float)
         }
         if stepname == "registrate":
             retdata["image"] = self.image if (not self.image is None) else np.array([])

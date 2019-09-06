@@ -41,8 +41,8 @@ class WormDetector:
         self.images[index].wormbwl = gpuwormbwl.cpu().numpy()
         self.images[index].wormcentroids = calculate_worm_centroids(gpuwormbwl, self.images.coors)
         nworms = self.images[index].wormcentroids.shape[0]
-        self.images[index].wormdies = np.array([0 for i in range(nworms)], dtype=np.uint8)
-        self.images[index].wormdead = np.array([0 for i in range(nworms)], dtype=np.uint8)
+        self.images[index].wormdies = np.array([0 for i in range(nworms)], dtype=np.bool)
+        self.images[index].wormdead = np.array([0 for i in range(nworms)], dtype=np.bool)
         self.images[index].score_deathdetect = np.array([np.nan for i in range(nworms)], dtype=np.float)
         self.images[index].score_deathselect = np.array([np.nan for i in range(nworms)], dtype=np.float)
         self.images[index].step = StepDetect

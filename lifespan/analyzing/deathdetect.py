@@ -22,45 +22,33 @@ def death_judge(manager, fcurrent, finterval, overlap_threshold):
     bwoverlap = torch.cuda.BoolTensor(np.ones(mp.imagesize))
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
         if manager[i].error:
-            return DeathJudgement(numdeaths=0, bwldeaths=torch.cuda.IntTensor(np.zeros(mp.imagesize)), centroids=[])
+            return
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
         bwoverlap = bwoverlap & (manager[i].gpuwormbwl > 0)
-    # bwl,nbwl = skimage.measure.label(manager[fcurrent].wormbw, return_num=True)
-    # bwp = skimage.measure.regionprops(bwl)
-    # bwl = torch.cuda.IntTensor(bwl)
     bwl = manager[fcurrent].gpuwormbwl
     nbwl = manager[fcurrent].wormcentroids.shape[0]
-    bwldeaths = torch.cuda.IntTensor(np.zeros(mp.imagesize))
-    numdeaths = 0
-    centroids = []
     for i in range(nbwl):
         label = i + 1
         bwregion = (bwl==label)
         bwregion_overlap = bwregion & bwoverlap
         area_ratio = float(torch.sum(bwregion_overlap)) / float(torch.sum(bwregion))
+        manager[fcurrent].score_deathdetect[i] = area_ratio
         if area_ratio > overlap_threshold:
-            numdeaths += 1
-            bwldeaths = bwldeaths + bwregion.type(torch.int32) * numdeaths
-            centroid = torch_bwcentroid(bwregion, manager.coors)
-            centroids.append(centroid)
-    return DeathJudgement(numdeaths=numdeaths, bwldeaths=bwldeaths, centroids=centroids)
+            manager[fcurrent].wormdead[i] = True
 
-def death_select(manager, bwldeaths1, bwldeaths2, overlap_threshold):
-    bwunion = (bwldeaths1>0)&(bwldeaths2>0)
-    numdeaths = 0
-    bwldeaths = torch.cuda.IntTensor(np.zeros(tuple(bwunion.shape)))
-    nbwl2 = int(torch.max(bwldeaths2))
-    centroids = []
-    for i in range(nbwl2):
-        bwregion = (bwldeaths2 == i + 1)
-        bwregion_overlap = bwregion & bwunion
+def death_select(manager, fcurrent, bwdeaths, overlap_threshold):
+    # bwdeathscur = torch.cuda.BoolTensor(np.ones(mp.imagesize))
+    # bwunion = bwdeaths & manager[fcurrent].gpuwormbwl[manager.fcurrent]
+    # bwldeaths = torch.cuda.IntTensor(np.zeros(tuple(bwunion.shape)))
+    for i in range(manager[fcurrent].wormdead.shape[0]):
+        if not manager[fcurrent].wormdead[i]:
+            continue
+        label = i + 1
+        bwregion = (manager[fcurrent].gpuwormbwl == label)
+        bwregion_overlap = bwregion & bwdeaths
         area_ratio = float(torch.sum(bwregion_overlap)) / float(torch.sum(bwregion))
         if area_ratio < overlap_threshold:
-            numdeaths += 1
-            bwldeaths = bwldeaths + bwregion.type(torch.int32) * numdeaths
-            centroid = torch_bwcentroid(bwregion, manager.coors)
-            centroids.append(centroid)
-    return DeathJudgement(numdeaths=numdeaths, bwldeaths=bwldeaths, centroids=centroids)
+            manager[fcurrent].wormdies[i] = True
 
 class DeathDetector:
     def __init__(self, images):
@@ -75,16 +63,9 @@ class DeathDetector:
             self.images[index].gpuwormbwl = torch.cuda.IntTensor(self.images[index].wormbwl)
         if index < mp.finterval-1:
             return False
-        dji = death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
-        if index > mp.finterval-1: djr = death_select(self.images, self.bwdeaths, dji.bwldeaths, mp.death_overlap_threshold_for_selecting)
-        else: djr = dji
-        self.bwdeaths = self.bwdeaths | (dji.bwldeaths>0)
-        self.images[index].death = DeathResult(
-                numdeaths = djr.numdeaths,
-                bwdeaths = None, # (djr.bwldeaths > 0).cpu().numpy(),
-                bwdeaths_origin = None, # (dji.bwldeaths > 0).cpu().numpy(),
-                centroids = djr.centroids,
-                centroids_origin = dji.centroids
-            )
+        death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
+        death_select(self.images, index, self.bwdeaths, mp.death_overlap_threshold_for_selecting)
+        for i in range(self.images[index].wormdead.shape[0]):
+            self.bwdeaths = self.bwdeaths | (self.images[index].gpuwormbwl == i + 1)
         self.images[index].step = StepAnalyze
         return True

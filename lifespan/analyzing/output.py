@@ -6,7 +6,6 @@ class SummaryItem:
     def __init__(self):
         self.subdir = None
         self.shifting = None
-        self.numdeaths = None
         self.centroids = None
         self.wormdies = None
         self.wormdead = None
@@ -23,7 +22,6 @@ class SummaryCollector:
         self.stpouts[index] = SummaryItem()
         self.stpouts[index].subdir = self.images[index].subdir
         self.stpouts[index].shifting = self.images[index].shifting if not self.images[index].shifting is None else np.array((np.nan, np.nan))
-        self.stpouts[index].numdeaths = self.images[index].death.numdeaths if not self.images[index].death is None else np.nan
         self.stpouts[index].wormcentroids = self.images[index].wormcentroids if not self.images[index].wormcentroids is None else np.array([])
         self.stpouts[index].wormdies = self.images[index].wormdies if not self.images[index].wormdies is None else np.array([])
         self.stpouts[index].wormdead = self.images[index].wormdead if not self.images[index].wormdead is None else np.array([])
@@ -34,7 +32,6 @@ class SummaryCollector:
         outdata = {}
         outdata["nfiles"] = len(self.images)
         outdata["plate"] = self.plate
-        outdata["numdeaths"] = np.array([item.numdeaths for item in self.stpouts])
         outdata["centroids"] = np.array([item.wormcentroids for item in self.stpouts], np.object)
         outdata["fdies"] = np.array([item.wormdies for item in self.stpouts], np.object)
         outdata["fdead"] = np.array([item.wormdead for item in self.stpouts], np.object)
