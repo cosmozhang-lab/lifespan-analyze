@@ -8,7 +8,10 @@ class SummaryItem:
         self.shifting = None
         self.numdeaths = None
         self.centroids = None
-        self.centroids_origin = None
+        self.wormdies = None
+        self.wormdead = None
+        self.score_deathdetect = None
+        self.score_deathselect = None
 
 class SummaryCollector:
     def __init__(self, images=None, plate=None, outdir=None):
@@ -21,18 +24,22 @@ class SummaryCollector:
         self.stpouts[index].subdir = self.images[index].subdir
         self.stpouts[index].shifting = self.images[index].shifting if not self.images[index].shifting is None else np.array((np.nan, np.nan))
         self.stpouts[index].numdeaths = self.images[index].death.numdeaths if not self.images[index].death is None else np.nan
-        self.stpouts[index].centroids = self.images[index].death.centroids if not self.images[index].death is None else []
-        self.stpouts[index].centroids_origin = self.images[index].death.centroids_origin if not self.images[index].death is None else []
-        self.stpouts[index].wormcentroids = self.images[index].wormcentroids if not self.images[index].wormcentroids is None else []
+        self.stpouts[index].wormcentroids = self.images[index].wormcentroids if not self.images[index].wormcentroids is None else np.array([])
+        self.stpouts[index].wormdies = self.images[index].wormdies if not self.images[index].wormdies is None else np.array([])
+        self.stpouts[index].wormdead = self.images[index].wormdead if not self.images[index].wormdead is None else np.array([])
+        self.stpouts[index].score_deathdetect = self.images[index].score_deathdetect if not self.images[index].score_deathdetect is None else np.array([])
+        self.stpouts[index].score_deathselect = self.images[index].score_deathselect if not self.images[index].score_deathselect is None else np.array([])
         return True
     def complete(self):
         outdata = {}
         outdata["nfiles"] = len(self.images)
         outdata["plate"] = self.plate
         outdata["numdeaths"] = np.array([item.numdeaths for item in self.stpouts])
-        outdata["centroids"] = np.array([np.array(item.centroids) for item in self.stpouts], np.object)
-        outdata["oricentroids"] = np.array([np.array(item.centroids_origin) for item in self.stpouts], np.object)
-        outdata["wormcentroids"] = np.array([np.array(item.wormcentroids) for item in self.stpouts], np.object)
+        outdata["centroids"] = np.array([item.wormcentroids for item in self.stpouts], np.object)
+        outdata["fdies"] = np.array([item.wormdies for item in self.stpouts], np.object)
+        outdata["fdead"] = np.array([item.wormdead for item in self.stpouts], np.object)
+        outdata["rddetect"] = np.array([item.score_deathdetect for item in self.stpouts], np.object)
+        outdata["rdselect"] = np.array([item.score_deathselect for item in self.stpouts], np.object)
         outdata["dirnames"] = np.array([item.subdir for item in self.stpouts], np.object)
         outdata["imshifts"] = np.array([item.shifting for item in self.stpouts])
         # write result

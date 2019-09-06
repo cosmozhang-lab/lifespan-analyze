@@ -53,11 +53,15 @@ class ImageItem:
         self.initstep = StepInit
         self.image = None
         self.gpuimage = None
-        self.wormbw = None
-        self.gpuwormbw = None
+        self.wormbwl = None
+        self.gpuwormbwl = None
         self.death = None
         self.shifting = None
         self.wormcentroids = None
+        self.wormdies = None
+        self.wormdead = None
+        self.score_deathdetect = None
+        self.score_deathselect = None
         self.error = None
         self.buffdir = buffdir
         self.load_step()
@@ -106,12 +110,16 @@ class ImageItem:
         retdata = {
             "error": np.array(1 if (not self.error is None) else 0),
             "shifting": self.shifting if (not self.shifting is None) else np.array([]),
-            "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([])
+            "wormcentroids": self.wormcentroids if (not self.wormcentroids is None) else np.array([]),
+            "wormdies": self.wormdies if (not self.wormdies is None) else np.array([]),
+            "wormdead": self.wormdead if (not self.wormdead is None) else np.array([]),
+            "score_deathdetect": self.score_deathdetect if (not self.score_deathdetect is None) else np.array([]),
+            "score_deathselect": self.score_deathselect if (not self.score_deathselect is None) else np.array([])
         }
         if stepname == "registrate":
             retdata["image"] = self.image if (not self.image is None) else np.array([])
         elif stepname == "detect":
-            retdata["wormbw"] = self.wormbw if (not self.wormbw is None) else np.array([])
+            retdata["wormbwl"] = self.wormbwl if (not self.wormbwl is None) else np.array([])
         return retdata
 
     def load_buff(self):
@@ -137,12 +145,16 @@ class ImageItem:
                     if "error" in buffdata: self.error = ValueError("error in load data") if bool(buffdata["error"]) else None
                     if "shifting" in buffdata: self.shifting = buffdata["shifting"]
                     if "wormcentroids" in buffdata: self.wormcentroids = buffdata["wormcentroids"]
+                    if "wormdies" in buffdata: self.wormdies = buffdata["wormdies"]
+                    if "wormdead" in buffdata: self.wormdead = buffdata["wormdead"]
+                    if "score_deathselect" in buffdata: self.score_deathselect = buffdata["score_deathselect"]
+                    if "score_deathdetect" in buffdata: self.score_deathdetect = buffdata["score_deathdetect"]
                     if "image" in buffdata: self.image = buffdata["image"]
-                    if "wormbw" in buffdata: self.wormbw = buffdata["wormbw"]
+                    if "wormbwl" in buffdata: self.wormbwl = buffdata["wormbwl"]
                     self.step = stepmap[stepname]
                     self.initstep = stepmap[stepname]
                     break
-        if self.image is None and self.wormbw is None:
+        if self.image is None and self.wormbwl is None:
             self.load_buff()
 
 class ImageManager:

@@ -19,15 +19,17 @@ class DeathResult:
         self.centroids_origin = centroids_origin
 
 def death_judge(manager, fcurrent, finterval, overlap_threshold):
-    bwoverlap = torch.cuda.ByteTensor(np.ones(mp.imagesize))
+    bwoverlap = torch.cuda.BoolTensor(np.ones(mp.imagesize))
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
         if manager[i].error:
             return DeathJudgement(numdeaths=0, bwldeaths=torch.cuda.IntTensor(np.zeros(mp.imagesize)), centroids=[])
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
-        bwoverlap = bwoverlap & manager[i].gpuwormbw
-    bwl,nbwl = skimage.measure.label(manager[fcurrent].wormbw, return_num=True)
+        bwoverlap = bwoverlap & (manager[i].gpuwormbwl > 0)
+    # bwl,nbwl = skimage.measure.label(manager[fcurrent].wormbw, return_num=True)
     # bwp = skimage.measure.regionprops(bwl)
-    bwl = torch.cuda.IntTensor(bwl)
+    # bwl = torch.cuda.IntTensor(bwl)
+    bwl = manager[fcurrent].gpuwormbwl
+    nbwl = manager[fcurrent].wormcentroids.shape[0]
     bwldeaths = torch.cuda.IntTensor(np.zeros(mp.imagesize))
     numdeaths = 0
     centroids = []
@@ -63,14 +65,14 @@ def death_select(manager, bwldeaths1, bwldeaths2, overlap_threshold):
 class DeathDetector:
     def __init__(self, images):
         self.images = images
-        self.bwdeaths = torch.cuda.ByteTensor(np.zeros(mp.imagesize))
+        self.bwdeaths = torch.cuda.BoolTensor(np.zeros(mp.imagesize))
     def step(self, index):
         if self.images[index].step >= StepAnalyze:
             return True
         if self.images[index].error:
             return False
-        if self.images[index].gpuwormbw is None:
-            self.images[index].gpuwormbw = torch.cuda.ByteTensor(self.images[index].wormbw)
+        if self.images[index].gpuwormbwl is None:
+            self.images[index].gpuwormbwl = torch.cuda.IntTensor(self.images[index].wormbwl)
         if index < mp.finterval-1:
             return False
         dji = death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)

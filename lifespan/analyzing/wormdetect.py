@@ -12,6 +12,7 @@ def calculate_worm_centroids(bwlworms, coors=None):
         label = i + 1
         centroid = torch_bwcentroid(bwlworms==label, coors)
         centroids.append(centroid)
+    centroids = np.array(centroids)
     return centroids
 
 class WormDetector:
@@ -36,9 +37,13 @@ class WormDetector:
         gpuwormbwl = detect_worm_2d(self.images[index].gpuimage)
         if mp.dnn_discriminate:
             gpuwormbwl = dnn_filter_worms(self.images[index].gpuimage, gpuwormbwl, WormDetector.discriminator, coors=self.images.coors, default_adopt=True)
-        gpuwormbw = (gpuwormbwl > 0).to(torch.uint8)
-        self.images[index].gpuwormbw = gpuwormbw
-        self.images[index].wormbw = gpuwormbw.cpu().numpy()
+        self.images[index].gpuwormbwl = gpuwormbwl
+        self.images[index].wormbwl = gpuwormbwl.cpu().numpy()
         self.images[index].wormcentroids = calculate_worm_centroids(gpuwormbwl, self.images.coors)
+        nworms = self.images[index].wormcentroids.shape[0]
+        self.images[index].wormdies = np.array([0 for i in range(nworms)], dtype=np.uint8)
+        self.images[index].wormdead = np.array([0 for i in range(nworms)], dtype=np.uint8)
+        self.images[index].score_deathdetect = np.array([np.nan for i in range(nworms)], dtype=np.float)
+        self.images[index].score_deathselect = np.array([np.nan for i in range(nworms)], dtype=np.float)
         self.images[index].step = StepDetect
         return True
