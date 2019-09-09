@@ -22,7 +22,7 @@ function varargout = view_results_gui(varargin)
 
 % Edit the above text to modify the response to help view_results_gui
 
-% Last Modified by GUIDE v2.5 25-Dec-2018 12:42:53
+% Last Modified by GUIDE v2.5 28-Aug-2019 16:05:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,6 +79,7 @@ handles.imshifts = imshifts;
 handles.current = 0;
 handles.playing = false;
 handles.timer = [];
+handles.roi = nan;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -174,33 +175,52 @@ goto_image(hObject, handles, str2double(handles.goto_edit.String));
 
 function [handles] = goto_image(hObject, handles, idx)
 
-if ~isnan(idx) && (idx >= 0) && (idx <= handles.nfiles)
+if ~isnan(idx) && (idx >= 1) && (idx <= handles.nfiles)
     params;
     figure(2);
+    xlimval = get(gca, 'XLim');
+    ylimval = get(gca, 'YLim');
     name = handles.dirnames{idx};
     platedir = handles.plate;
     if sc ~= 1; platedir = [handles.plate, '.resize']; end
-    img = imread(fullfile(outdir, platedir, [name, suffix]));
+    img = imread(fullfile(outdir, platedir, name, [handles.plate, suffix]));
     img = image_shift(img, fliplr(int32(handles.imshifts(idx,:)*sc)));
+%     if isnan(handles.roi)
+%         imshow(img);
+%     else
+%         roi = handles.roi;
+%         roi = round(roi);
+%         roi = min(roi, [size(img,2),size(img,1);size(img,2),size(img,1)]);
+%         roi = max(roi, [0,0;0,0]);
+%         handles.roi = roi;
+%         guidata(hObject, handles);
+%         imshow(img(roi(1,2):roi(2,2),roi(1,1):roi(2,1)));
+%     end
     imshow(img);
+    if handles.current >= 1 && handles.current <= handles.nfiles
+        xlim(xlimval);
+        ylim(ylimval);
+    end
     if ~isempty(handles.centroids); ctds = handles.centroids{idx} * sc; else; ctds = []; end
     if ~isempty(handles.oricentroids); octds = handles.oricentroids{idx} * sc; else; octds = []; end
+%     if ~isempty(handles.wormcentroids); wctds = cell2mat(handles.wormcentroids(idx,:,:)) * sc; else; wctds = []; end
+%     if ~isempty(wctds); wctds = reshape(wctds, [size(wctds,2), size(wctds,3)]); end
     if ~isempty(handles.wormcentroids); wctds = handles.wormcentroids{idx} * sc; else; wctds = []; end
     if ~isempty(wctds)
         hold on;
-        plot(wctds(:,2), wctds(:,1), '.', 'Color', [0,1,0]);
+        plot(wctds(:,2), wctds(:,1), '.', 'Color', [0,1,0], 'MarkerSize', 6);
         hold off;
     end
-%     if ~isempty(octds)
-%         hold on;
-%         plot(octds(:,2), octds(:,1), 'b*');
-%         hold off;
-%     end
-%     if ~isempty(ctds)
-%         hold on;
-%         plot(ctds(:,2), ctds(:,1), 'ro');
-%         hold off;
-%     end
+    if ~isempty(octds)
+        hold on;
+        plot(octds(:,2), octds(:,1), 'b*');
+        hold off;
+    end
+    if ~isempty(ctds)
+        hold on;
+        plot(ctds(:,2), ctds(:,1), 'ro');
+        hold off;
+    end
     name = strrep(name, '__', 'T');
     title(sprintf('%d/%d  %s', idx, handles.nfiles, name));
     handles.info_edit.String = sprintf('%d/%d  %s', idx, handles.nfiles, name);
@@ -290,3 +310,4 @@ end
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+

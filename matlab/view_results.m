@@ -5,6 +5,8 @@ params;
 load(fullfile(outdir, [plate, '.out.mat']));
 nfiles = min(nfiles, maxnfiles);
 
+numdeaths = nan(1,nfiles);
+for i = 1:nfiles; numdeaths(i) = sum(fdies{i}); end
 numdeaths = numdeaths(1:nfiles);
 numdeaths(isnan(numdeaths)) = 0;
 numalive = cumsum(numdeaths);
