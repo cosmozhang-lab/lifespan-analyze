@@ -35,24 +35,29 @@ rcurve = [];
 rctds = [];
 for i = 1:nfiles
     ctds = centroids{i};
-    fds = fdead{i};
-    dctds = ctds(fds, :);
-    for j = 1:size(dctds,1)
+    rds = rddetect{i};
+    for j = 1:size(ctds,1)
+        if isnan(rds(j)) || rds(j) < 0.1; continue; end
         if isempty(rctds)
-            rctds = dctds(i,:);
+            rctds = ctds(j,:);
             rcurve = nan(1,nfiles);
-            rcurve(1,i) = fds;
+            rcurve(1,i) = rds(j);
             continue;
         end
-        dists = sqrt(sum((repmat(dctds(j,:), [size(rctds,1),1]) - rctds) .^ 2, 2));
+        dists = sqrt(sum((repmat(ctds(j,:), [size(rctds,1),1]) - rctds) .^ 2, 2));
         [~,k] = min(dists);
         if dists(k) < 20
+        	rcurve(k,i) = rds(j);
         else
-            rctds = [rctds;dctds(j,:)];
+            rctds = [rctds;ctds(j,:)];
             rcurve = [rcurve;nan(1,nfiles)];
-            rcurve(end,i) = rddetect(i);
+            rcurve(end,i) = rds(j);
         end
     end
 end
+
+rcurve(isnan(rcurve)) = 0;
+figure(2);
+plot(1:nfiles, rcurve);
 
 end
