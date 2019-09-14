@@ -22,7 +22,7 @@ function varargout = view_results_gui(varargin)
 
 % Edit the above text to modify the response to help view_results_gui
 
-% Last Modified by GUIDE v2.5 28-Aug-2019 16:05:42
+% Last Modified by GUIDE v2.5 11-Sep-2019 14:08:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,7 +58,8 @@ handles.output = hObject;
 params;
 load(fullfile(outdir, [plate, '.out.mat']));
 nfiles = min(nfiles,maxnfiles);
-numdeaths = numdeaths(1:nfiles);
+numdeaths = nan(1,nfiles);
+for i = 1:nfiles; numdeaths(i) = sum(fdies{i}); end
 numdeaths(isnan(numdeaths)) = 0;
 numalive = cumsum(numdeaths);
 numalive = numalive(end) - numalive;
@@ -67,12 +68,14 @@ numalive = numalive(end) - numalive;
 %     filenames{i} = fullfile(outdir, plate, [dirnames{i}, suffix]);
 % end
 
+[rcurve, rctds] = result_rcurve(centroids, rddetect);
+
 handles.plate = plate;
 handles.numdeaths = numdeaths;
 handles.numalive = numalive;
 handles.centroids = centroids;
-handles.oricentroids = oricentroids;
-handles.wormcentroids = wormcentroids;
+handles.fdies = fdies;
+handles.fdead = fdead;
 handles.nfiles = nfiles;
 handles.dirnames = dirnames;
 handles.imshifts = imshifts;
@@ -80,6 +83,8 @@ handles.current = 0;
 handles.playing = false;
 handles.timer = [];
 handles.roi = nan;
+handles.rcurve = rcurve;
+handles.rctds = rctds;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -182,7 +187,10 @@ if ~isnan(idx) && (idx >= 1) && (idx <= handles.nfiles)
     ylimval = get(gca, 'YLim');
     name = handles.dirnames{idx};
     platedir = handles.plate;
-    if sc ~= 1; platedir = [handles.plate, '.resize']; end
+    if sc ~= 1
+        platedir = [handles.plate, '.resize'];
+        suffix = suffixsc;
+    end
     img = imread(fullfile(outdir, platedir, name, [handles.plate, suffix]));
     img = image_shift(img, fliplr(int32(handles.imshifts(idx,:)*sc)));
 %     if isnan(handles.roi)
@@ -201,24 +209,27 @@ if ~isnan(idx) && (idx >= 1) && (idx <= handles.nfiles)
         xlim(xlimval);
         ylim(ylimval);
     end
-    if ~isempty(handles.centroids); ctds = handles.centroids{idx} * sc; else; ctds = []; end
-    if ~isempty(handles.oricentroids); octds = handles.oricentroids{idx} * sc; else; octds = []; end
-%     if ~isempty(handles.wormcentroids); wctds = cell2mat(handles.wormcentroids(idx,:,:)) * sc; else; wctds = []; end
-%     if ~isempty(wctds); wctds = reshape(wctds, [size(wctds,2), size(wctds,3)]); end
-    if ~isempty(handles.wormcentroids); wctds = handles.wormcentroids{idx} * sc; else; wctds = []; end
-    if ~isempty(wctds)
+    fdies = handles.fdies{idx};
+    fdead = handles.fdead{idx};
+    ctds = handles.centroids{idx};
+    ctds1 = ctds(fdead,:);
+    ctds2 = ctds(fdies,:);
+    rctds = ctds * sc;
+    rctds1 = ctds1 * sc;
+    rctds2 = ctds2 * sc;
+    if ~isempty(rctds)
         hold on;
-        plot(wctds(:,2), wctds(:,1), '.', 'Color', [0,1,0], 'MarkerSize', 6);
+        plot(rctds(:,2), rctds(:,1), '.', 'Color', [0,1,0], 'MarkerSize', 6);
         hold off;
     end
-    if ~isempty(octds)
+    if ~isempty(rctds1)
         hold on;
-        plot(octds(:,2), octds(:,1), 'b*');
+        plot(rctds1(:,2), rctds1(:,1), 'b*');
         hold off;
     end
-    if ~isempty(ctds)
+    if ~isempty(rctds2)
         hold on;
-        plot(ctds(:,2), ctds(:,1), 'ro');
+        plot(rctds2(:,2), rctds2(:,1), 'ro');
         hold off;
     end
     name = strrep(name, '__', 'T');
@@ -310,4 +321,27 @@ end
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+
+
+% --- Executes on button press in show_rcurve_button.
+function show_rcurve_button_Callback(hObject, eventdata, handles)
+% hObject    handle to show_rcurve_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+params;
+rctds = handles.rctds;
+rcurve = handles.rcurve;
+figure(2);
+[x,y] = ginput(1);
+if isempty(x); return; end
+ctd = [y,x]/sc;
+dists = sqrt(sum((repmat(ctd, [size(rctds,1),1]) - rctds).^2, 2));
+[mindist, mini] = min(dists);
+if mindist > 150
+    msgbox('Failed to match an R-curve of this point', 'Error');
+    return;
+end
+figure(3);
+plot(rcurve(mini,:));
 

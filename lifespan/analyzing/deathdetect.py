@@ -65,7 +65,8 @@ class DeathDetector:
             return False
         death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)
         death_select(self.images, index, self.bwdeaths, mp.death_overlap_threshold_for_selecting)
-        for i in range(self.images[index].wormdead.shape[0]):
+        for i in range(self.images[index].wormdies.shape[0]):
+            if not self.images[index].wormdies[i]: continue
             self.bwdeaths = self.bwdeaths | (self.images[index].gpuwormbwl == i + 1)
         self.images[index].step = StepAnalyze
         return True

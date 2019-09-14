@@ -4,3 +4,4 @@ suffix = '.tiff';
 framerate = 24; % frames per day
 maxnfiles = Inf;
 sc = 1;
+suffixsc = '.jpg';
