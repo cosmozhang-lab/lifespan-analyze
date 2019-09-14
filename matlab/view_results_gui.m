@@ -69,6 +69,7 @@ numalive = numalive(end) - numalive;
 % end
 
 [rcurve, rctds] = result_rcurve(centroids, rddetect);
+[r2curve, r2ctds] = result_rcurve(centroids, rdselect);
 
 handles.plate = plate;
 handles.numdeaths = numdeaths;
@@ -85,6 +86,8 @@ handles.timer = [];
 handles.roi = nan;
 handles.rcurve = rcurve;
 handles.rctds = rctds;
+handles.r2curve = r2curve;
+handles.r2ctds = r2ctds;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -332,16 +335,32 @@ function show_rcurve_button_Callback(hObject, eventdata, handles)
 params;
 rctds = handles.rctds;
 rcurve = handles.rcurve;
+r2ctds = handles.r2ctds;
+r2curve = handles.r2curve;
 figure(2);
 [x,y] = ginput(1);
 if isempty(x); return; end
 ctd = [y,x]/sc;
 dists = sqrt(sum((repmat(ctd, [size(rctds,1),1]) - rctds).^2, 2));
 [mindist, mini] = min(dists);
-if mindist > 150
-    msgbox('Failed to match an R-curve of this point', 'Error');
-    return;
-end
+if isempty(mindist) || mindist > 150; mini = 0; end
+dists = sqrt(sum((repmat(ctd, [size(r2ctds,1),1]) - r2ctds).^2, 2));
+[mindist2, mini2] = min(dists);
+if isempty(mindist2) || mindist2 > 150; mini2 = 0; end
 figure(3);
-plot(rcurve(mini,:));
+clf;
+subplot(211);
+if mini > 0
+    title('R1');
+    plot(rcurve(mini,:));
+else
+    title('R1 (not found)');
+end
+subplot(212);
+if mini2 > 0
+    title('R2');
+    plot(r2curve(mini2,:));
+else
+    title('R2 (not found)');
+end
 

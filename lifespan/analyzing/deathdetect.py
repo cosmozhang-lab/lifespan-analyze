@@ -47,6 +47,7 @@ def death_select(manager, fcurrent, bwdeaths, overlap_threshold):
         bwregion = (manager[fcurrent].gpuwormbwl == label)
         bwregion_overlap = bwregion & bwdeaths
         area_ratio = float(torch.sum(bwregion_overlap)) / float(torch.sum(bwregion))
+        manager[fcurrent].score_deathselect[i] = area_ratio
         if area_ratio < overlap_threshold:
             manager[fcurrent].wormdies[i] = True
 

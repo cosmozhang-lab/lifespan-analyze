@@ -32,9 +32,13 @@ grid on;
 %% registrate dead worms and withdraw their IoU value series
 
 rcurve = result_rcurve(centroids, rddetect);
+r2curve = result_rcurve(centroids, rdselect);
 
 figure(2);
+subplot(211);
 plot(1:nfiles, rcurve);
+subplot(212);
+plot(1:nfiles, r2curve);
 
 % histogram(rcnts, 100);
 
