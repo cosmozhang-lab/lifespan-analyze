@@ -58,7 +58,7 @@ class Discriminator(nn.Module):
         label = (y > float(score_th))
         if singlebatch:
             y = y.view(list(y.shape)[1:])
-        return label
+        return label, y
     def requires_grad_(self, requires_grad=True):
         for parameter in self.parameters():
             parameter.requires_grad_(requires_grad)

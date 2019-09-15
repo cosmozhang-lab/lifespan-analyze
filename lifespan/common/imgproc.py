@@ -63,7 +63,9 @@ def dnn_filter_worms(image, bwlworms, discriminator, coors=None, default_adopt=N
     imw,imh = mp.imagesize
     outbwl = torch.cuda.IntTensor(np.zeros(tuple(bwl.shape)))
     outnbwl = 0
+    scores = []
     for piece in prepare_image(img, bwl, coors=coors):
+        score = 0
         adopt = False
         if piece.data is None:
             if default_adopt is None:
@@ -72,9 +74,13 @@ def dnn_filter_worms(image, bwlworms, discriminator, coors=None, default_adopt=N
                 adopt = True
             else:
                 adopt = False
-        elif bool(discriminator.predict(piece.data)):
-            adopt = True
+        else:
+            pred, score = discriminator.predict(piece.data)
+            if bool(pred):
+                adopt = True
         if adopt:
             outnbwl += 1
             outbwl += (bwl==piece.wid).type(torch.int) * outnbwl
-    return outbwl
+            scores.append(float(score))
+    scores = np.array(scores, dtype=np.float32)
+    return outbwl, scores

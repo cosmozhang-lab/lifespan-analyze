@@ -25,8 +25,8 @@ class WormDetector:
             import lifespan.learning.userconfig as dnnconfig
             WormDetector.discriminator = Discriminator()
             Trainer.load_model_params(WormDetector.discriminator, dnnconfig.model_path)
-            WormDetector.discriminator.to(torch.device("cuda"))
             WormDetector.discriminator.requires_grad_(False)
+            WormDetector.discriminator.to(torch.device("cuda"))
     def step(self, index):
         if self.images[index].step >= StepDetect:
             return True
@@ -36,8 +36,21 @@ class WormDetector:
             self.images[index].gpuimage = torch.cuda.ByteTensor(self.images[index].image)
         gpuwormbwl = detect_worm_2d(self.images[index].gpuimage)
         if mp.dnn_discriminate:
-            gpuwormbwl = dnn_filter_worms(self.images[index].gpuimage, gpuwormbwl, WormDetector.discriminator, coors=self.images.coors, default_adopt=True)
-        self.images[index].gpuwormbwl = gpuwormbwl
+            gpuwormbwl, scores = dnn_filter_worms(self.images[index].gpuimage, gpuwormbwl, WormDetector.discriminator, coors=self.images.coors, default_adopt=True)
+            if scores.size > 255:
+                # too many worms detected, kick out worms with low scores
+                iscores = np.argsort(scores)[-255:]
+                scores = scores[iscores]
+                nlabel = 0
+                newgpuwormbwl = np.cuda.ByteTensor(np.zeros(mp.imagesize))
+                for i in list(iscores):
+                    nlabel += 1
+                    newgpuwormbwl += (gpuwormbwl == i + 1).to(torch.uint8) * nlabel
+                gpuwormbwl = newgpuwormbwl
+        else:
+            # TODO: we should kick out some worms to make sure there are no more than 255 worms detected.
+            pass
+        self.images[index].gpuwormbwl = gpuwormbwl.to(torch.uint8)
         self.images[index].wormbwl = gpuwormbwl.cpu().numpy()
         self.images[index].wormcentroids = calculate_worm_centroids(gpuwormbwl, self.images.coors)
         nworms = self.images[index].wormcentroids.shape[0]

@@ -61,7 +61,7 @@ class DeathDetector:
         if self.images[index].error:
             return False
         if self.images[index].gpuwormbwl is None:
-            self.images[index].gpuwormbwl = torch.cuda.IntTensor(self.images[index].wormbwl)
+            self.images[index].gpuwormbwl = torch.cuda.ByteTensor(self.images[index].wormbwl)
         if index < mp.finterval-1:
             return False
         death_judge(self.images, index, mp.finterval, mp.death_overlap_threshold)

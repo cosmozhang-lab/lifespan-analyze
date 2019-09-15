@@ -35,8 +35,8 @@ def dnn_filter_worms(image, bwlworms, regions, regionids):
         if piece.data is None:
             regiontypes.append(RegionType.UNKNOWN)
             continue
-        label = bool(discriminator.predict(piece.data))
-        if label:
+        label, _ = discriminator.predict(piece.data)
+        if bool(label):
             regiontypes.append(RegionType.TARGET)
         else:
             regiontypes.append(RegionType.MISTAKE)
