@@ -218,10 +218,23 @@ class Dataset(TorchDataset):
         ret = self.copy()
         return ret.shuffle_()
     def split(self, proportions):
+        grouped_files = {}
+        for filename in self.files:
+            platename = filename.split("__")[0]
+            if not platename in grouped_files:
+                grouped_files[platename] = []
+            grouped_files[platename].append(filename)
+        grouped_files_list = []
+        for platename in grouped_files:
+            grouped_files_list.append({
+                "plate": platename,
+                "count": len(grouped_files[platename]),
+                "files": grouped_files[platename]
+            })
+        # random.shuffle(grouped_files_list)
         sumproportions = float(np.sum(proportions))
-        for p in proportions: sumproportions += float(p)
         proportions = [float(p) / sumproportions for p in proportions]
-        total = len(self.files)
+        total = len(grouped_files_list)
         lengths = [round(total*p) for p in proportions]
         ret = []
         start = 0
@@ -230,7 +243,11 @@ class Dataset(TorchDataset):
             if end > total: end = total
             subset = Dataset(_empty=True)
             subset.root = self.root
-            subset.files = self.files[start:end]
+            groups = grouped_files_list[start:end]
+            files = []
+            for group in groups:
+                files += group["files"]
+            subset.files = files
             ret.append(subset)
             start = end
         return proportions.__class__(ret)

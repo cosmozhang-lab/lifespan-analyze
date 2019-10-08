@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.io import savemat
 import os
+import time
 
 class SummaryItem:
     def __init__(self):
@@ -18,6 +19,8 @@ class SummaryCollector:
         self.plate = plate
         self.outdir = outdir
         self.stpouts = [None for i in range(len(self.images))]
+        self.tictime = 0
+        self.timing = {}
     def step(self, index):
         self.stpouts[index] = SummaryItem()
         self.stpouts[index].subdir = self.images[index].subdir
@@ -28,6 +31,15 @@ class SummaryCollector:
         self.stpouts[index].score_deathdetect = self.images[index].score_deathdetect if not self.images[index].score_deathdetect is None else np.array([])
         self.stpouts[index].score_deathselect = self.images[index].score_deathselect if not self.images[index].score_deathselect is None else np.array([])
         return True
+    def tic(self):
+        self.tictime = time.time()
+    def toc(self, index, group, ticnext=True):
+        timed = time.time() - self.tictime
+        if not group in self.timing:
+            self.timing[group] = [np.nan for i in range(len(self.images))]
+        self.timing[group][index] = timed
+        if ticnext:
+            self.tic()
     def complete(self):
         outdata = {}
         outdata["nfiles"] = len(self.images)
@@ -39,5 +51,7 @@ class SummaryCollector:
         outdata["rdselect"] = np.array([item.score_deathselect for item in self.stpouts], np.object)
         outdata["dirnames"] = np.array([item.subdir for item in self.stpouts], np.object)
         outdata["imshifts"] = np.array([item.shifting for item in self.stpouts])
+        for group in self.timing:
+            outdata["timing_" + group] = np.array(self.timing[group])
         # write result
         savemat(os.path.join(self.outdir, "%s.out.mat" % self.plate), outdata)

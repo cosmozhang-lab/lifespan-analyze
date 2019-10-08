@@ -18,7 +18,7 @@ def get_trainer():
 def train():
     trainer = get_trainer()
     # trainer.dataset.check()
-    save_model = model_path if userconfig.save_model else None
+    save_model = userconfig.model_path if userconfig.save_model else None
     trainer.train(with_test=True, log_steps=200, save_model=save_model)
 
 def run_datasets():

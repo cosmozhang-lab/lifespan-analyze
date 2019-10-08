@@ -17,3 +17,6 @@
 # Python junks
 *.pyc
 __pycache__
+
+# test scripts
+/test*

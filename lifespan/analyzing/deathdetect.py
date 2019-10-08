@@ -26,7 +26,7 @@ def death_judge(manager, fcurrent, finterval, overlap_threshold):
     for i in range(fcurrent - finterval + 1, fcurrent + 1):
         bwoverlap = bwoverlap & (manager[i].gpuwormbwl > 0)
     bwl = manager[fcurrent].gpuwormbwl
-    nbwl = manager[fcurrent].wormcentroids.shape[0]
+    nbwl = min(manager[fcurrent].wormcentroids.shape[0], 255)
     for i in range(nbwl):
         label = i + 1
         bwregion = (bwl==label)
@@ -40,7 +40,7 @@ def death_select(manager, fcurrent, bwdeaths, overlap_threshold):
     # bwdeathscur = torch.cuda.BoolTensor(np.ones(mp.imagesize))
     # bwunion = bwdeaths & manager[fcurrent].gpuwormbwl[manager.fcurrent]
     # bwldeaths = torch.cuda.IntTensor(np.zeros(tuple(bwunion.shape)))
-    for i in range(manager[fcurrent].wormdead.shape[0]):
+    for i in range(min(manager[fcurrent].wormdead.shape[0], 255)):
         if not manager[fcurrent].wormdead[i]:
             continue
         label = i + 1
