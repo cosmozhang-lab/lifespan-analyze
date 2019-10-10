@@ -4,6 +4,7 @@ thisdir = os.path.realpath(os.path.dirname(__file__))
 imgsuffix = ".tiff"
 imagesize = (6680, 6680)
 marksize = (256, 256)
+distthre = 128
 worm_minarea = 500
 worm_maxarea = 3500
 plate_threshold = 35

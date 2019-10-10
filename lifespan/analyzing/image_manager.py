@@ -157,18 +157,21 @@ class ImageItem:
             self.load_buff()
 
 class ImageManager:
-    def __init__(self, root=None, plate=None, ifile0=0, nfiles=None, backward=0, forward=0, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
+    def __init__(self, root=None, plate=None, starttime=None, endtime=None, backward=0, forward=0, save_jpeg=False, save_buff=False, save_step=None, buffdir=None):
         self.save_jpeg_flag = save_jpeg
         self.save_buff_flag = save_buff
         self.save_step_name = save_step
         self.buffdir = buffdir
         self.plate = plate
         self.rootdir = root
-        filelistslice = slice(ifile0) if nfiles is None else slice(ifile0, ifile0+nfiles)
-        self.filelist = get_file_list(self.rootdir, self.plate)[filelistslice]
+        self.filelist = get_file_list(self.rootdir, self.plate)
+        if isinstance(starttime, str): starttime = parse_datetime(starttime)
+        if isinstance(endtime, str): endtime = parse_datetime(endtime)
+        self.filelist = list(filter(lambda item: (starttime is None or item.datetime >= starttime) and (endtime is None or item.datetime <= endtime), self.filelist))
         self.backward = backward
         self.forward = forward
         self.imgbuff = [None for i in range(self.buffsize)]
+        self.globalids = np.array([]) # cross-time re-identify of worms
         self.current = 0
         self.coors = make_coors(size=mp.imagesize, engine=torch, device="cuda")
 

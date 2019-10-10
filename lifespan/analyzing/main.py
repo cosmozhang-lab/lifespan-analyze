@@ -7,7 +7,7 @@ def run():
     for plate in userparam.plates:
         print("Task: %s" % plate)
         ts = time.time()
-        analyzer = Analyzer(rootdir=userparam.rootdir, outdir=userparam.outdir, plate=plate, ifile0=userparam.ifile0, nfiles=userparam.nfiles,
+        analyzer = Analyzer(rootdir=userparam.rootdir, outdir=userparam.outdir, plate=plate, starttime=userparam.starttime, endtime=userparam.endtime,
                             save_jpeg=userparam.savejpeg, save_buff=userparam.savebuff, save_step=userparam.savestep, buffdir=userparam.buffdir)
         analyzer.carryout()
         te = time.time()
