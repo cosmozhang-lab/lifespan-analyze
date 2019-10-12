@@ -2,7 +2,7 @@ function [] = view_results()
 
 params;
 
-load(fullfile(outdir, [plate, '.out.mat']));
+load(fullfile(rootdir, resultfile));
 nfiles = min(nfiles, maxnfiles);
 
 %% calculate number of deaths

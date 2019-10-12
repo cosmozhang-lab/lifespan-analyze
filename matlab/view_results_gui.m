@@ -56,7 +56,7 @@ function view_results_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 params;
-load(fullfile(outdir, [plate, '.out.mat']));
+load(fullfile(rootdir, resultfile));
 nfiles = min(nfiles,maxnfiles);
 numdeaths = nan(1,nfiles);
 for i = 1:nfiles; numdeaths(i) = sum(fdies{i}); end
@@ -71,6 +71,10 @@ numalive = numalive(end) - numalive;
 [rcurve, rctds] = result_rcurve(centroids, rddetect);
 [r2curve, r2ctds] = result_rcurve(centroids, rdselect);
 
+handles.rootdir = rootdir;
+handles.imgprefix = imgprefix;
+handles.imgsuffix = imgsuffix;
+handles.sc = sc;
 handles.plate = plate;
 handles.numdeaths = numdeaths;
 handles.numalive = numalive;
@@ -184,29 +188,16 @@ goto_image(hObject, handles, str2double(handles.goto_edit.String));
 function [handles] = goto_image(hObject, handles, idx)
 
 if ~isnan(idx) && (idx >= 1) && (idx <= handles.nfiles)
-    params;
     figure(2);
     xlimval = get(gca, 'XLim');
     ylimval = get(gca, 'YLim');
     name = handles.dirnames{idx};
-    platedir = handles.plate;
-    if sc ~= 1
-        platedir = [handles.plate, '.resize'];
-        suffix = suffixsc;
-    end
-    img = imread(fullfile(outdir, platedir, name, [handles.plate, suffix]));
+    rootdir = handles.rootdir;
+    imgprefix = handles.imgprefix;
+    imgsuffix = handles.imgsuffix;
+    sc = handles.sc;
+    img = imread(fullfile(rootdir, [imgprefix, name, imgsuffix]));
     img = image_shift(img, fliplr(int32(handles.imshifts(idx,:)*sc)));
-%     if isnan(handles.roi)
-%         imshow(img);
-%     else
-%         roi = handles.roi;
-%         roi = round(roi);
-%         roi = min(roi, [size(img,2),size(img,1);size(img,2),size(img,1)]);
-%         roi = max(roi, [0,0;0,0]);
-%         handles.roi = roi;
-%         guidata(hObject, handles);
-%         imshow(img(roi(1,2):roi(2,2),roi(1,1):roi(2,1)));
-%     end
     imshow(img);
     if handles.current >= 1 && handles.current <= handles.nfiles
         xlim(xlimval);
@@ -215,8 +206,8 @@ if ~isnan(idx) && (idx >= 1) && (idx <= handles.nfiles)
     fdies = handles.fdies{idx};
     fdead = handles.fdead{idx};
     ctds = handles.centroids{idx};
-    ctds1 = ctds(fdead,:);
-    ctds2 = ctds(fdies,:);
+    ctds1 = ctds(fdead==1,:);
+    ctds2 = ctds(fdies==1,:);
     rctds = ctds * sc;
     rctds1 = ctds1 * sc;
     rctds2 = ctds2 * sc;
