@@ -40,7 +40,7 @@ class SummaryCollector:
         self.timing[group][index] = timed
         if ticnext:
             self.tic()
-    def complete(self):
+    def complete(self, deathdetector=None):
         outdata = {}
         outdata["nfiles"] = len(self.images)
         outdata["plate"] = self.plate
@@ -53,5 +53,8 @@ class SummaryCollector:
         outdata["imshifts"] = np.array([item.shifting for item in self.stpouts])
         for group in self.timing:
             outdata["timing_" + group] = np.array(self.timing[group])
+        if deathdetector is not None:
+            outdata["globalids"] = deathdetector.globalids if deathdetector.globalids is not None else np.array([])
+            outdata["globalcentroids"] = deathdetector.globalcentroids if deathdetector.globalcentroids is not None else np.array([])
         # write result
         savemat(os.path.join(self.outdir, "%s.out.mat" % self.plate), outdata)

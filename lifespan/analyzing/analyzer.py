@@ -45,7 +45,7 @@ class Analyzer:
         self.images.save_step(index)
         self.nextstep += 1
     def complete(self):
-        self.summary.complete()
+        self.summary.complete(deathdetector=self.deathdetector)
         if self.prgbar: self.prgbar.finish()
     def carryout(self):
         self.prepare()

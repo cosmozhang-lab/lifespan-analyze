@@ -21,7 +21,7 @@ class FileItem:
     def path(self):
         return os.path.join(self.rootdir, self.subdir, self.filename)
 
-def get_file_list(rootdir, plate):
+def get_file_list(rootdir, plate, starttime=None, endtime=None):
     import re
     filelist = os.listdir(rootdir)
     filelist = list(filter(
@@ -41,6 +41,9 @@ def get_file_list(rootdir, plate):
         ))
     ))
     filelist.sort(key=(lambda x: x.datetime))
+    if isinstance(starttime, str): starttime = parse_datetime(starttime)
+    if isinstance(endtime, str): endtime = parse_datetime(endtime)
+    filelist = list(filter(lambda item: (starttime is None or item.datetime >= starttime) and (endtime is None or item.datetime <= endtime), filelist))
     return filelist
 
 
@@ -142,12 +145,12 @@ class ImageItem:
                 if os.path.isfile(bufffile):
                     buffdata = loadmat(bufffile)
                     if "error" in buffdata: self.error = ValueError("error in load data") if bool(buffdata["error"]) else None
-                    if "shifting" in buffdata: self.shifting = buffdata["shifting"]
+                    if "shifting" in buffdata: self.shifting = buffdata["shifting"].flatten()
                     if "wormcentroids" in buffdata: self.wormcentroids = buffdata["wormcentroids"]
-                    if "wormdies" in buffdata: self.wormdies = buffdata["wormdies"]
-                    if "wormdead" in buffdata: self.wormdead = buffdata["wormdead"]
-                    if "score_deathselect" in buffdata: self.score_deathselect = buffdata["score_deathselect"]
-                    if "score_deathdetect" in buffdata: self.score_deathdetect = buffdata["score_deathdetect"]
+                    if "wormdies" in buffdata: self.wormdies = buffdata["wormdies"].flatten()
+                    if "wormdead" in buffdata: self.wormdead = buffdata["wormdead"].flatten()
+                    if "score_deathselect" in buffdata: self.score_deathselect = buffdata["score_deathselect"].flatten()
+                    if "score_deathdetect" in buffdata: self.score_deathdetect = buffdata["score_deathdetect"].flatten()
                     if "image" in buffdata: self.image = buffdata["image"]
                     if "wormbwl" in buffdata: self.wormbwl = buffdata["wormbwl"]
                     self.step = stepmap[stepname]
@@ -164,14 +167,10 @@ class ImageManager:
         self.buffdir = buffdir
         self.plate = plate
         self.rootdir = root
-        self.filelist = get_file_list(self.rootdir, self.plate)
-        if isinstance(starttime, str): starttime = parse_datetime(starttime)
-        if isinstance(endtime, str): endtime = parse_datetime(endtime)
-        self.filelist = list(filter(lambda item: (starttime is None or item.datetime >= starttime) and (endtime is None or item.datetime <= endtime), self.filelist))
+        self.filelist = get_file_list(self.rootdir, self.plate, starttime=starttime, endtime=endtime)
         self.backward = backward
         self.forward = forward
         self.imgbuff = [None for i in range(self.buffsize)]
-        self.globalids = np.array([]) # cross-time re-identify of worms
         self.current = 0
         self.coors = make_coors(size=mp.imagesize, engine=torch, device="cuda")
 
@@ -219,3 +218,4 @@ class ImageManager:
             return self.imgbuff[ig]
         else:
             raise TypeError("indices must be integers or slices, not list")
+
