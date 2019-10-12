@@ -66,11 +66,11 @@ class DeathDetector:
                 # 在第j帧中，寻找所有与当前虫子质心距离在distthre距离范围内的虫子
                 # 从这些虫子中选择与当前虫子重叠面积最大的那一条，作为当前虫子在第j帧中对应的重标记虫
                 # 并将bwoverlap与重标记虫的二值图像求交集
-                if self.images[fcurrent-1].wormcentroids is None or self.images[fcurrent-1].wormcentroids.shape[0] == 0:
+                if self.images[j].wormcentroids is None or self.images[j].wormcentroids.shape[0] == 0:
                     bwoverlap[:,:] = False
                     break
                 # 计算所有虫子距离当前帧虫子的距离，选择distthre范围内的虫子
-                dists = np.sqrt(np.sum((centroidcur - self.images[fcurrent-1].wormcentroids)**2, axis=1))
+                dists = np.sqrt(np.sum((centroidcur - self.images[j].wormcentroids)**2, axis=1))
                 ihiss = np.where(dists <= mp.distthre)[0]
                 if ihiss.shape[0] == 0:
                     bwoverlap[:,:] = False
@@ -81,16 +81,13 @@ class DeathDetector:
                 piecematch = None
                 for ihis in list(ihiss):
                     labelhis = ihis + 1
-                    centroidhis = np.round(self.images[fcurrent-1].wormcentroids[ihis,:])
+                    centroidhis = np.round(self.images[j].wormcentroids[ihis,:])
                     piecehis = drawout_piece(self.images[j].gpuwormbwl, centroidhis, bwshapehf) == labelhis
                     areao = int(torch.sum(piecehis & piececur))
                     if areaomax < areao:
                         areaomax = areao
                         imatch = ihis
                         piecematch = piecehis
-                # if float(areaomax) / float(areacur) < overlap_threshold:
-                #     bwoverlap[:,:] = False
-                #     break
                 if imatch is None:
                     bwoverlap[:,:] = False
                     break
