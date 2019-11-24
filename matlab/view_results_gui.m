@@ -342,16 +342,20 @@ figure(3);
 clf;
 subplot(211);
 if mini > 0
-    title('R1');
     plot(rcurve(mini,:));
+    title('R1 curve');
 else
     title('R1 (not found)');
 end
+ylabel('$r_1$', 'Interpreter', 'latex');
+xlabel('frame');
 subplot(212);
 if mini2 > 0
-    title('R2');
     plot(r2curve(mini2,:));
+    title('R2 curve');
 else
     title('R2 (not found)');
 end
+ylabel('$r_2$', 'Interpreter', 'latex');
+xlabel('frame');
 
