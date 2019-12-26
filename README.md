@@ -8,3 +8,7 @@
 4. Edit `cp lifespan/learning/userconfig.py` for your configurations.
 5. To modify algorighm parameters, edit `lifespan/common/mainparams.py`.
 
+## Run main analyze algorithms
+
+1. Edit `lifespan/analyzing/userparam.py` for your configurations.
+2. `python main.py analyze`
