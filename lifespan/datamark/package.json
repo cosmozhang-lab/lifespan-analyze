@@ -6,7 +6,7 @@
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.4.1",
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^3.4.1",
     "fontawesome": "^4.7.2",
     "jquery": "^3.3.1",
     "popper.js": "^1.14.4",
