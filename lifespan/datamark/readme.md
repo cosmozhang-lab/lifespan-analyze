@@ -11,3 +11,13 @@
 # 6 login & choose dataset, then setup
 
 # 7 visit http://x.x.x.x:8080 & start label
+
+# env
+
+conda install Django
+conda install numpy
+conda install pytorch torchvision -c pytorch
+conda install scikit-image
+conda install python-opencv
+conda isntall progressbar2
+sudo apt-get install npm
